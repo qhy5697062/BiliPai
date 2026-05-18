@@ -12,7 +12,7 @@ plugins {
     id("com.android.library") version "8.13.2" apply false
     id("com.android.test") version "8.13.2" apply false
 
-    id("com.google.devtools.ksp") version "2.3.4" apply false
+    id("com.google.devtools.ksp") version "2.3.8" apply false
 
     // 2. Kotlin 全家桶
     id("org.jetbrains.kotlin.android") version "2.3.21" apply false
