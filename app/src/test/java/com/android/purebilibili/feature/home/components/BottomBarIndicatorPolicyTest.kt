@@ -1,6 +1,7 @@
 package com.android.purebilibili.feature.home.components
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import com.android.purebilibili.core.store.BottomBarLiquidGlassPreset
 import com.android.purebilibili.core.store.LiquidGlassMode
 import com.android.purebilibili.core.ui.motion.BottomBarMotionProfile
@@ -243,6 +244,60 @@ class BottomBarIndicatorPolicyTest {
                 preset = BottomBarLiquidGlassPreset.BILIPAI_TUNED
             )
         )
+    }
+
+    @Test
+    fun `transparent glass preset disables indicator lens while tuned preset keeps it`() {
+        assertFalse(
+            shouldUseBottomBarIndicatorLens(
+                preset = BottomBarLiquidGlassPreset.BACKDROP_NATIVE
+            )
+        )
+        assertTrue(
+            shouldUseBottomBarIndicatorLens(
+                preset = BottomBarLiquidGlassPreset.BILIPAI_TUNED
+            )
+        )
+    }
+
+    @Test
+    fun `transparent glass selected item keeps theme color over indicator backdrop`() {
+        val unselected = Color(0xFF1F1F1F)
+        val theme = Color(0xFF00A88F)
+        val color = resolveBottomBarTransparentGlassContentColor(
+            unselectedColor = unselected,
+            selectedColor = theme,
+            themeWeight = 1f,
+            verticalProgress = 1f,
+            darkTheme = false
+        )
+
+        assertTrue(color.green > color.red)
+        assertTrue(color.green > color.blue)
+        assertTrue(color.green >= theme.green * 0.72f)
+    }
+
+    @Test
+    fun `transparent glass unselected content adapts readability with vertical scroll`() {
+        val unselected = Color(0xFF4A4A4A)
+        val theme = Color(0xFF00A88F)
+        val top = resolveBottomBarTransparentGlassContentColor(
+            unselectedColor = unselected,
+            selectedColor = theme,
+            themeWeight = 0f,
+            verticalProgress = 0f,
+            darkTheme = false
+        )
+        val scrolled = resolveBottomBarTransparentGlassContentColor(
+            unselectedColor = unselected,
+            selectedColor = theme,
+            themeWeight = 0f,
+            verticalProgress = 1f,
+            darkTheme = false
+        )
+
+        assertTrue(top.luminance() > 0.72f)
+        assertTrue(scrolled.luminance() < 0.18f)
     }
 
     @Test

@@ -122,6 +122,10 @@ class BottomBarMiuixPolicyTest {
         assertFalse(transparentPresetSource.contains("vibrancy()"))
         assertFalse(transparentPresetSource.contains("blur("))
         assertTrue(transparentPresetSource.contains("lens("))
+        val indicatorSource = source
+            .substringAfter("val indicatorBackdrop = if (shouldUseBottomBarCombinedIndicatorBackdrop(liquidGlassPreset))")
+            .substringBefore("if (!effectiveSearchExpanded)")
+        assertTrue(indicatorSource.contains("shouldUseBottomBarIndicatorLens(liquidGlassPreset)"))
     }
 
     private fun loadSource(path: String): String {

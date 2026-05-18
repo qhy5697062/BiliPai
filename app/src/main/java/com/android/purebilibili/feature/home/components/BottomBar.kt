@@ -604,6 +604,12 @@ internal fun shouldRenderBottomBarForegroundAboveIndicator(
     return preset == BottomBarLiquidGlassPreset.BACKDROP_NATIVE
 }
 
+internal fun shouldUseBottomBarIndicatorLens(
+    preset: BottomBarLiquidGlassPreset
+): Boolean {
+    return preset == BottomBarLiquidGlassPreset.BILIPAI_TUNED
+}
+
 internal fun shouldComposeBottomBarDockContent(
     dockContentAlpha: Float,
     effectiveSearchExpanded: Boolean
@@ -842,6 +848,54 @@ internal fun resolveBottomBarGlassVisibleContentColor(
         start = unselectedColor,
         stop = selectedColor,
         fraction = themeWeight.coerceIn(0f, 1f)
+    )
+}
+
+internal fun resolveBottomBarTransparentGlassContentColor(
+    unselectedColor: Color,
+    selectedColor: Color,
+    themeWeight: Float,
+    verticalProgress: Float,
+    darkTheme: Boolean
+): Color {
+    val progress = verticalProgress.coerceIn(0f, 1f)
+    val readableBase = if (darkTheme) {
+        lerpColor(
+            start = Color(0xFFF2F2F2),
+            stop = Color.White,
+            fraction = progress
+        )
+    } else {
+        lerpColor(
+            start = Color.White,
+            stop = Color(0xFF171717),
+            fraction = progress
+        )
+    }
+    val readableUnselected = lerpColor(
+        start = unselectedColor,
+        stop = readableBase,
+        fraction = 0.86f
+    )
+    val clampedWeight = themeWeight.coerceIn(0f, 1f)
+    if (clampedWeight <= 0.001f) return readableUnselected
+    val readableSelected = if (darkTheme || progress < 0.5f) {
+        lerpColor(
+            start = selectedColor,
+            stop = Color.White,
+            fraction = 0.22f
+        )
+    } else {
+        lerpColor(
+            start = selectedColor,
+            stop = Color.Black,
+            fraction = 0.16f
+        )
+    }
+    return lerpColor(
+        start = readableUnselected,
+        stop = readableSelected,
+        fraction = clampedWeight
     )
 }
 
@@ -2865,14 +2919,27 @@ private fun KernelSuAlignedBottomBar(
             fun visibleItemContentColor(
                 item: BottomNavItem?,
                 coverage: Float
-            ): Color = resolveBottomBarGlassVisibleContentColor(
-                unselectedColor = unselectedColor,
-                selectedColor = selectedContentColor(item),
-                themeWeight = coverage,
-                glassEnabled = glassEnabled,
-                indicatorProgress = effectiveIndicatorProgress,
-                indicatorBackdropEnabled = shouldRenderIndicatorBackdrop
-            )
+            ): Color {
+                val itemSelectedColor = selectedContentColor(item)
+                return if (transparentGlassPreset && glassEnabled) {
+                    resolveBottomBarTransparentGlassContentColor(
+                        unselectedColor = unselectedColor,
+                        selectedColor = itemSelectedColor,
+                        themeWeight = coverage,
+                        verticalProgress = verticalGlassProfile.progress,
+                        darkTheme = isDarkTheme
+                    )
+                } else {
+                    resolveBottomBarGlassVisibleContentColor(
+                        unselectedColor = unselectedColor,
+                        selectedColor = itemSelectedColor,
+                        themeWeight = coverage,
+                        glassEnabled = glassEnabled,
+                        indicatorProgress = effectiveIndicatorProgress,
+                        indicatorBackdropEnabled = shouldRenderIndicatorBackdrop
+                    )
+                }
+            }
 
             fun exportItemContentColor(
                 item: BottomNavItem?,
@@ -3209,6 +3276,9 @@ private fun KernelSuAlignedBottomBar(
                             .height(56.dp)
                             .align(Alignment.CenterStart)
                             .run {
+                                val indicatorThemeColor = selectedContentColor(
+                                    visibleItems.getOrNull(selectedIndex)
+                                )
                                 val indicatorBackdrop = if (shouldUseBottomBarCombinedIndicatorBackdrop(liquidGlassPreset)) {
                                     contentBackdrop
                                 } else {
@@ -3219,20 +3289,14 @@ private fun KernelSuAlignedBottomBar(
                                         backdrop = indicatorBackdrop,
                                         shape = { shellShape },
                                         effects = {
-                                            lens(
-                                                refractionHeight = if (transparentGlassPreset) {
-                                                    nativeIndicatorSpec.refractionHeightDp.dp.toPx()
-                                                } else {
-                                                    indicatorLensSpec.refractionHeightDp.dp.toPx()
-                                                },
-                                                refractionAmount = if (transparentGlassPreset) {
-                                                    nativeIndicatorSpec.refractionAmountDp.dp.toPx()
-                                                } else {
-                                                    indicatorLensSpec.refractionAmountDp.dp.toPx()
-                                                },
-                                                depthEffect = true,
-                                                chromaticAberration = !transparentGlassPreset
-                                            )
+                                            if (shouldUseBottomBarIndicatorLens(liquidGlassPreset)) {
+                                                lens(
+                                                    refractionHeight = indicatorLensSpec.refractionHeightDp.dp.toPx(),
+                                                    refractionAmount = indicatorLensSpec.refractionAmountDp.dp.toPx(),
+                                                    depthEffect = true,
+                                                    chromaticAberration = true
+                                                )
+                                            }
                                         },
                                         highlight = {
                                             Highlight.Default.copy(
@@ -3245,6 +3309,20 @@ private fun KernelSuAlignedBottomBar(
                                                     maxOf(indicatorHighlightAlpha, indicatorGlowAlpha)
                                                 }
                                             )
+                                        },
+                                        onDrawSurface = {
+                                            if (transparentGlassPreset) {
+                                                drawRect(
+                                                    indicatorThemeColor.copy(
+                                                        alpha = if (isDarkTheme) 0.22f else 0.14f
+                                                    )
+                                                )
+                                                drawRect(
+                                                    Color.White.copy(
+                                                        alpha = if (isDarkTheme) 0.08f else 0.18f
+                                                    )
+                                                )
+                                            }
                                         },
                                         shadow = {
                                             Shadow(
