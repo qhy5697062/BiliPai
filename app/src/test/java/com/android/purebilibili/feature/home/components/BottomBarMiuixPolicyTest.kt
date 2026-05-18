@@ -116,9 +116,9 @@ class BottomBarMiuixPolicyTest {
 
         assertTrue(source.contains("BottomBarLiquidGlassPreset.BACKDROP_NATIVE"))
         assertTrue(source.contains("resolveBottomBarBackdropNativeSurfaceSpec("))
-        assertTrue(source.contains("surfaceAlphaMultiplier = 0.85f"))
-        assertTrue(source.contains("highlightAlpha = 0.06f"))
-        assertTrue(source.contains("shadowAlpha = 0.08f"))
+        assertTrue(source.contains("surfaceAlphaMultiplier = 0.48f"))
+        assertTrue(source.contains("highlightAlpha = 0.04f"))
+        assertTrue(source.contains("shadowAlpha = 0.045f"))
         assertFalse(transparentPresetSource.contains("vibrancy()"))
         assertFalse(transparentPresetSource.contains("blur("))
         assertTrue(transparentPresetSource.contains("lens("))

@@ -1540,7 +1540,17 @@ internal fun resolveBottomBarEffectiveRefractionMotionProfile(
 ): BottomBarRefractionMotionProfile {
     return when (preset) {
         BottomBarLiquidGlassPreset.BILIPAI_TUNED -> profile
-        BottomBarLiquidGlassPreset.BACKDROP_NATIVE -> profile
+        BottomBarLiquidGlassPreset.BACKDROP_NATIVE -> {
+            val motionProgress = profile.progress.coerceIn(0f, 1f)
+            profile.copy(
+                indicatorLensAmountScale = profile.indicatorLensAmountScale *
+                    lerp(1f, 1.16f, motionProgress),
+                indicatorLensHeightScale = profile.indicatorLensHeightScale *
+                    lerp(1f, 1.10f, motionProgress),
+                chromaticBoostScale = profile.chromaticBoostScale *
+                    lerp(1f, 1.12f, motionProgress)
+            )
+        }
     }
 }
 
@@ -1568,11 +1578,11 @@ internal fun resolveBottomBarBackdropNativeSurfaceSpec(
 ): BottomBarBackdropNativeSurfaceSpec {
     return BottomBarBackdropNativeSurfaceSpec(
         blurRadiusDp = 0f,
-        refractionHeightDp = 11f,
-        refractionAmountDp = 28f,
-        surfaceAlphaMultiplier = 0.85f,
-        highlightAlpha = 0.06f,
-        shadowAlpha = 0.08f,
+        refractionHeightDp = 13f,
+        refractionAmountDp = 34f,
+        surfaceAlphaMultiplier = 0.48f,
+        highlightAlpha = 0.04f,
+        shadowAlpha = 0.045f,
         chromaticAberration = false
     )
 }

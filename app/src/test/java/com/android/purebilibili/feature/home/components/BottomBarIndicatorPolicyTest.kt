@@ -456,7 +456,32 @@ class BottomBarIndicatorPolicyTest {
     }
 
     @Test
-    fun `transparent glass preset reuses bilipai horizontal refraction motion`() {
+    fun `bilipai tuned preset keeps original horizontal refraction motion`() {
+        val profile = resolveBottomBarRefractionMotionProfile(
+            position = 1.32f,
+            velocity = 860f,
+            isDragging = true
+        )
+        val effectiveProfile = resolveBottomBarEffectiveRefractionMotionProfile(
+            preset = BottomBarLiquidGlassPreset.BILIPAI_TUNED,
+            profile = profile
+        )
+
+        assertEquals(profile.progress, effectiveProfile.progress, 0.001f)
+        assertEquals(profile.exportPanelOffsetFraction, effectiveProfile.exportPanelOffsetFraction, 0.001f)
+        assertEquals(profile.indicatorPanelOffsetFraction, effectiveProfile.indicatorPanelOffsetFraction, 0.001f)
+        assertEquals(profile.visiblePanelOffsetFraction, effectiveProfile.visiblePanelOffsetFraction, 0.001f)
+        assertEquals(profile.visibleSelectionEmphasis, effectiveProfile.visibleSelectionEmphasis, 0.001f)
+        assertEquals(profile.exportSelectionEmphasis, effectiveProfile.exportSelectionEmphasis, 0.001f)
+        assertEquals(profile.exportCaptureWidthScale, effectiveProfile.exportCaptureWidthScale, 0.001f)
+        assertEquals(profile.forceChromaticAberration, effectiveProfile.forceChromaticAberration)
+        assertEquals(profile.indicatorLensAmountScale, effectiveProfile.indicatorLensAmountScale, 0.001f)
+        assertEquals(profile.indicatorLensHeightScale, effectiveProfile.indicatorLensHeightScale, 0.001f)
+        assertEquals(profile.chromaticBoostScale, effectiveProfile.chromaticBoostScale, 0.001f)
+    }
+
+    @Test
+    fun `transparent glass preset keeps bilipai motion path but strengthens dynamic lens`() {
         val profile = resolveBottomBarRefractionMotionProfile(
             position = 1.32f,
             velocity = 860f,
@@ -475,9 +500,9 @@ class BottomBarIndicatorPolicyTest {
         assertEquals(profile.exportSelectionEmphasis, effectiveProfile.exportSelectionEmphasis, 0.001f)
         assertEquals(profile.exportCaptureWidthScale, effectiveProfile.exportCaptureWidthScale, 0.001f)
         assertEquals(profile.forceChromaticAberration, effectiveProfile.forceChromaticAberration)
-        assertEquals(profile.indicatorLensAmountScale, effectiveProfile.indicatorLensAmountScale, 0.001f)
-        assertEquals(profile.indicatorLensHeightScale, effectiveProfile.indicatorLensHeightScale, 0.001f)
-        assertEquals(profile.chromaticBoostScale, effectiveProfile.chromaticBoostScale, 0.001f)
+        assertTrue(effectiveProfile.indicatorLensAmountScale > profile.indicatorLensAmountScale)
+        assertTrue(effectiveProfile.indicatorLensHeightScale > profile.indicatorLensHeightScale)
+        assertTrue(effectiveProfile.chromaticBoostScale > profile.chromaticBoostScale)
     }
 
     @Test
@@ -632,7 +657,7 @@ class BottomBarIndicatorPolicyTest {
     }
 
     @Test
-    fun `transparent glass surface stays clear with lightweight refraction`() {
+    fun `transparent glass surface uses nagramx style low alpha lightweight refraction`() {
         val idle = resolveBottomBarBackdropNativeSurfaceSpec(
             blurRadiusDp = 18f,
             verticalProgress = 0f
@@ -644,16 +669,16 @@ class BottomBarIndicatorPolicyTest {
 
         assertEquals(0f, idle.blurRadiusDp, 0.001f)
         assertEquals(0f, scrolled.blurRadiusDp, 0.001f)
-        assertEquals(11f, idle.refractionHeightDp, 0.001f)
-        assertEquals(11f, scrolled.refractionHeightDp, 0.001f)
-        assertEquals(28f, idle.refractionAmountDp, 0.001f)
-        assertEquals(28f, scrolled.refractionAmountDp, 0.001f)
-        assertEquals(0.85f, idle.surfaceAlphaMultiplier, 0.001f)
-        assertEquals(0.85f, scrolled.surfaceAlphaMultiplier, 0.001f)
-        assertEquals(0.06f, idle.highlightAlpha, 0.001f)
-        assertEquals(0.06f, scrolled.highlightAlpha, 0.001f)
-        assertEquals(0.08f, idle.shadowAlpha, 0.001f)
-        assertEquals(0.08f, scrolled.shadowAlpha, 0.001f)
+        assertEquals(13f, idle.refractionHeightDp, 0.001f)
+        assertEquals(13f, scrolled.refractionHeightDp, 0.001f)
+        assertEquals(34f, idle.refractionAmountDp, 0.001f)
+        assertEquals(34f, scrolled.refractionAmountDp, 0.001f)
+        assertEquals(0.48f, idle.surfaceAlphaMultiplier, 0.001f)
+        assertEquals(0.48f, scrolled.surfaceAlphaMultiplier, 0.001f)
+        assertEquals(0.04f, idle.highlightAlpha, 0.001f)
+        assertEquals(0.04f, scrolled.highlightAlpha, 0.001f)
+        assertEquals(0.045f, idle.shadowAlpha, 0.001f)
+        assertEquals(0.045f, scrolled.shadowAlpha, 0.001f)
         assertFalse(scrolled.chromaticAberration)
     }
 
