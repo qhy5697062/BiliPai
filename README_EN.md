@@ -5,11 +5,11 @@
 </p>
 
 <p align="center">
-  <sub>Last updated: 2026-05-21 · Synced to v8.3.7 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
+  <sub>Last updated: 2026-05-22 · Synced to v8.3.8 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-8.3.7-fb7299?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/Version-8.3.8-fb7299?style=flat-square" alt="Version">
   <img src="https://img.shields.io/github/stars/jay3-yy/BiliPai?style=flat-square&color=yellow" alt="Stars">
   <img src="https://img.shields.io/github/forks/jay3-yy/BiliPai?style=flat-square&color=green" alt="Forks">
   <img src="https://img.shields.io/github/last-commit/jay3-yy/BiliPai?style=flat-square&color=purple" alt="Last Commit">
@@ -432,14 +432,14 @@ A lightweight plugin format requiring **no coding**, just a simple JSON file to 
 
 See full changelog: [CHANGELOG.md](CHANGELOG.md)
 
-### Latest (v8.3.7 · 2026-05-21)
+### Latest (v8.3.8 · 2026-05-22)
 
-- Reworked bottom-bar primary pages around a single `MainHost + HorizontalPager` root, so tab switching no longer pushes legacy top-level routes.
-- Restored tap-switch indicator refraction and scale feedback so the bottom bar keeps a visible glass transition instead of only moving the indicator.
-- Preserved continuous pager motion: intermediate pages participate in the horizontal slide, while heavy Dynamic/History/Profile loading waits until the page is settled.
-- Removed the unintended rebound from video-card-to-detail entry, reducing the brief white status-bar flash during detail entry.
-- Updated Navigation3 root-stack, page/route mapping, back handling, Story offscreen preload, and structure tests.
-- Bumped the app to `8.3.7` with `versionCode` `201`.
+- Reworked predictive-back ownership, gesture driving, and shared-element coordination so system back, in-app back, and detail-card return animations no longer compete.
+- Fixed video detail shared-element sources under the bottom-bar pager, improved AOSP predictive-back screenshot consistency, and decoupled predictive-back style from card transition settings.
+- Restored the first swipe after returning to Home and fixed the Dynamic top glass divider bleed-through.
+- Opus details now prefer `opus/detail` and render complete API paragraph order, including titles, text, rich text, full image blocks, inline images, and no 9-image detail cap.
+- Fixed space/dynamic opus entry clicks and added PiliPlus-style link cards for video, live, opus, music, goods, vote, common web, and unavailable cards with safe routing.
+- Bumped the app to `8.3.8` with `versionCode` `202`.
 
 ---
 

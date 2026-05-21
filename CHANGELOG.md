@@ -1,5 +1,28 @@
 # Changelog
 
+## v8.3.8 (2026-05-22)
+
+### 版本信息
+- 版本号从 `8.3.7` 升级到 `8.3.8`，`versionCode` 升级到 `202`。
+- 本次为“预测式返回与共享元素动画稳定 + 长图文详情全文、图片、链接卡完整显示”的维护更新，汇总 8.3.7 到 8.3.8 的全部改动。
+
+### 更新内容
+- **预测式返回链路重写**：重写预测式返回开关所有权、手势驱动与 Navigation3 展示宿主联动，避免系统预测返回、应用内返回和共享元素动画争抢同一段返回过程。
+- **共享元素返回稳定性**：修复底栏分页下视频详情共享元素来源记录，返回时能回到正确视频卡片；视频预测返回回收动画接入同一套链路，减少返回尾段错位。
+- **系统返回视觉一致性**：补齐 AOSP 预测返回截图一致性与经典/现代样式策略，并把预测返回样式从卡片转场开关中解耦，降低设置项之间的隐性耦合。
+- **首页返场与动态顶部修复**：修复从详情回到首页后首滑失效的问题；收敛预测返回手势进度状态范围；修复动态顶部玻璃分隔线透出导致的视觉噪点。
+- **长图文详情全文显示**：动态详情遇到 `MAJOR_TYPE_OPUS`、`opus` 或 `/opus/` 入口时优先请求 `x/polymer/web-dynamic/v1/opus/detail`，不再因为桌面动态详情已有预览摘要就提前返回。
+- **长图文段落解析补全**：按 `MODULE_TYPE_CONTENT.module_content.paragraphs` 顺序解析标题、文本、富文本节点、`pic.pics[]`、`pic.url` 和 `line.pic`，详情页按完整段落渲染，图片不再受列表九宫格上限影响。
+- **长图文入口跳转修复**：兼容动态 `type` 数字解析，空间长图文和动态长图文预览点击后进入动态详情全文路径，不再停留在预览卡片或错误旧入口。
+- **长图文链接卡完整渲染**：新增 PiliPlus 风格的紧凑链接卡正文块，支持 UGC、COMMON、LIVE、OPUS、MUSIC、GOODS、VOTE 和 ITEM_NULL；B 站视频、动态、专栏、直播等优先走应用内路由，外部网页和商品链接交给系统打开，缺失链接时安全无操作。
+- **版本与文档同步**：版本号升级到 `8.3.8` / `versionCode 202`，README、README_EN 和更新日志同步到 8.3.8。
+- **回归覆盖**：补充长图文段落解析、详情回退策略、动态卡点击策略、链接卡路由策略、首页返场首滑、预测返回与共享元素联动相关测试。
+
+### 验证
+- `./gradlew :app:testDebugUnitTest --tests 'com.android.purebilibili.data.model.response.DynamicModulesFlexibleSerializerTest' --tests 'com.android.purebilibili.feature.dynamic.components.DynamicCardClickPolicyTest'`
+- `./gradlew :app:compileDebugKotlin`
+- `git diff --check`
+
 ## v8.3.7 (2026-05-21)
 
 ### 版本信息

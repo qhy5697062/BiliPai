@@ -15,7 +15,7 @@
 </p>
 
 <p>
-  <img src="https://img.shields.io/badge/Version-8.3.7-007AFF?style=flat-square&labelColor=ffffff" alt="Version 8.3.7" />
+  <img src="https://img.shields.io/badge/Version-8.3.8-007AFF?style=flat-square&labelColor=ffffff" alt="Version 8.3.8" />
   <img src="https://img.shields.io/badge/Android-8.0%2B-34C759?style=flat-square&logo=android&logoColor=white" alt="Android 8.0+" />
   <img src="https://img.shields.io/badge/Kotlin-100%25-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin" />
   <img src="https://img.shields.io/badge/License-GPL--3.0-FF3B30?style=flat-square" alt="GPL-3.0" />
@@ -37,7 +37,7 @@
   </a>
 </p>
 
-<sub>README 更新：2026-05-21 · 当前构建版本以 app/build.gradle.kts 为准 · 发布记录以 <a href="CHANGELOG.md">CHANGELOG.md</a> 为准</sub>
+<sub>README 更新：2026-05-22 · 当前构建版本以 app/build.gradle.kts 为准 · 发布记录以 <a href="CHANGELOG.md">CHANGELOG.md</a> 为准</sub>
 
 </div>
 
@@ -179,13 +179,13 @@ cd BiliPai
 
 ## 最近更新
 
-当前仓库版本号已更新到 `8.3.7 / versionCode 201`。公开发布说明请以 [CHANGELOG.md](CHANGELOG.md) 为准；最新完整记录为 `v8.3.7`：
+当前仓库版本号已更新到 `8.3.8 / versionCode 202`。公开发布说明请以 [CHANGELOG.md](CHANGELOG.md) 为准；最新完整记录为 `v8.3.8`：
 
-- 底栏一级页统一改由 `MainHost + HorizontalPager` 承载，底栏切换不再 push 旧顶级 route。
-- 底栏点击切换保留指示器折射和放大反馈，修复只位移、不出现玻璃折射过渡的问题。
-- 跨页切换保留连续分页位移，中间页参与真实横向滑动，动态/历史/我的等重页面加载延后到 settled 当前页。
-- 移除视频卡片进入详情页时误加入的回弹动画，减少进入详情时状态栏短暂露白。
-- 更新 Navigation3 初始栈、底栏 page/route 映射、返回键、Story 离屏预加载和结构测试。
+- 重写预测式返回开关所有权、手势驱动和共享元素联动，修复底栏分页下视频详情返回来源与回收动画错位。
+- 优化 AOSP 预测返回截图一致性，解耦预测返回样式与卡片转场开关，并收敛手势进度状态范围。
+- 修复从详情回到首页后的首滑失效，以及动态顶部玻璃分隔线透出问题。
+- 长图文详情优先请求 `opus/detail`，按 API 段落顺序完整显示标题、正文、富文本、图片和行内图片。
+- 修复空间长图文与动态长图文点击入口，新增 PiliPlus 风格链接卡，支持视频、直播、商品、投票、普通网页和不可用卡片的完整渲染与跳转。
 
 ## 路线图
 
