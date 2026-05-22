@@ -5,11 +5,11 @@
 </p>
 
 <p align="center">
-  <sub>Last updated: 2026-05-22 · Synced to v8.3.8 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
+  <sub>Last updated: 2026-05-23 · Synced to v8.3.9 Beta1 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-8.3.8-fb7299?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/Version-8.3.9%20Beta1-fb7299?style=flat-square" alt="Version">
   <img src="https://img.shields.io/github/stars/jay3-yy/BiliPai?style=flat-square&color=yellow" alt="Stars">
   <img src="https://img.shields.io/github/forks/jay3-yy/BiliPai?style=flat-square&color=green" alt="Forks">
   <img src="https://img.shields.io/github/last-commit/jay3-yy/BiliPai?style=flat-square&color=purple" alt="Last Commit">
@@ -432,14 +432,14 @@ A lightweight plugin format requiring **no coding**, just a simple JSON file to 
 
 See full changelog: [CHANGELOG.md](CHANGELOG.md)
 
-### Latest (v8.3.8 · 2026-05-22)
+### Latest (v8.3.9 Beta1 · 2026-05-23)
 
-- Reworked predictive-back ownership, gesture driving, and shared-element coordination so system back, in-app back, and detail-card return animations no longer compete.
-- Fixed video detail shared-element sources under the bottom-bar pager, improved AOSP predictive-back screenshot consistency, and decoupled predictive-back style from card transition settings.
-- Restored the first swipe after returning to Home and fixed the Dynamic top glass divider bleed-through.
-- Opus details now prefer `opus/detail` and render complete API paragraph order, including titles, text, rich text, full image blocks, inline images, and no 9-image detail cap.
-- Fixed space/dynamic opus entry clicks and added PiliPlus-style link cards for video, live, opus, music, goods, vote, common web, and unavailable cards with safe routing.
-- Bumped the app to `8.3.8` with `versionCode` `202`.
+- Narrowed video shared-element return routing to real video-detail source pages, reducing stale metadata, hard cuts, and incorrect shared-element states.
+- Restored directional fallback when shared-element animation is disabled for Home, History, Favorite, and related sources while keeping the target page visible during return.
+- Decoupled predictive-back style from the shared-element switch and disabled leftover cover-only return paths when shared elements are off.
+- Fixed animation stacking when switching video-detail comments and player content, and removed the extra end-of-return card rebound.
+- Added `AppMotionTokens.spatialSpec()`, migrated shared-element spatial springs to it, and removed the old `AnimationSpecs` entry while preserving the previous spring feel.
+- Bumped the app to `8.3.9 Beta1` with `versionCode` `203`.
 
 ---
 

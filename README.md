@@ -15,7 +15,7 @@
 </p>
 
 <p>
-  <img src="https://img.shields.io/badge/Version-8.3.8-007AFF?style=flat-square&labelColor=ffffff" alt="Version 8.3.8" />
+  <img src="https://img.shields.io/badge/Version-8.3.9%20Beta1-007AFF?style=flat-square&labelColor=ffffff" alt="Version 8.3.9 Beta1" />
   <img src="https://img.shields.io/badge/Android-8.0%2B-34C759?style=flat-square&logo=android&logoColor=white" alt="Android 8.0+" />
   <img src="https://img.shields.io/badge/Kotlin-100%25-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin" />
   <img src="https://img.shields.io/badge/License-GPL--3.0-FF3B30?style=flat-square" alt="GPL-3.0" />
@@ -37,7 +37,7 @@
   </a>
 </p>
 
-<sub>README 更新：2026-05-22 · 当前构建版本以 app/build.gradle.kts 为准 · 发布记录以 <a href="CHANGELOG.md">CHANGELOG.md</a> 为准</sub>
+<sub>README 更新：2026-05-23 · 当前构建版本以 app/build.gradle.kts 为准 · 发布记录以 <a href="CHANGELOG.md">CHANGELOG.md</a> 为准</sub>
 
 </div>
 
@@ -179,13 +179,13 @@ cd BiliPai
 
 ## 最近更新
 
-当前仓库版本号已更新到 `8.3.8 / versionCode 202`。公开发布说明请以 [CHANGELOG.md](CHANGELOG.md) 为准；最新完整记录为 `v8.3.8`：
+当前仓库版本号已更新到 `8.3.9 Beta1 / versionCode 203`。公开发布说明请以 [CHANGELOG.md](CHANGELOG.md) 为准；最新完整记录为 `v8.3.9 Beta1`：
 
-- 重写预测式返回开关所有权、手势驱动和共享元素联动，修复底栏分页下视频详情返回来源与回收动画错位。
-- 优化 AOSP 预测返回截图一致性，解耦预测返回样式与卡片转场开关，并收敛手势进度状态范围。
-- 修复从详情回到首页后的首滑失效，以及动态顶部玻璃分隔线透出问题。
-- 长图文详情优先请求 `opus/detail`，按 API 段落顺序完整显示标题、正文、富文本、图片和行内图片。
-- 修复空间长图文与动态长图文点击入口，新增 PiliPlus 风格链接卡，支持视频、直播、商品、投票、普通网页和不可用卡片的完整渲染与跳转。
+- 收紧共享元素返回路由，只在真实视频详情返回来源页时启用视频返回转场，减少 stale metadata 导致的黑屏、硬切或错误共享元素状态。
+- 修复关闭共享元素动画后的 Home、History、Favorite 等来源页方向 fallback，并让返回目标页保持可见，减少返回首页时整页短暂消失。
+- 解耦预测式返回样式与共享元素开关，关闭共享元素后同步关闭残留的 cover-only 回收路径。
+- 修复视频详情评论切换播放器时的动画叠加，取消视频卡片返回末尾额外回弹，减少返回卡片二次跳动。
+- 新增 `AppMotionTokens.spatialSpec()` 并迁移共享元素空间变换弹簧，删除旧 `AnimationSpecs` 入口，保持原空间弹簧手感。
 
 ## 路线图
 

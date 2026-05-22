@@ -1,5 +1,25 @@
 # Changelog
 
+## v8.3.9 Beta1 (2026-05-23)
+
+### 版本信息
+- 版本号从 `8.3.8` 升级到 `8.3.9 Beta1`，`versionCode` 升级到 `203`。
+- 本次为“视频详情返回动画稳定 + 共享元素动效 token 收敛”的 Beta 更新，继续收口 8.3.8 后的 Navigation3、共享元素和预测式返回链路。
+
+### 更新内容
+- **共享元素返回路由收紧**：只在真实视频详情返回来源页时启用视频返回转场，避免动态详情等非视频页面吃到 stale 视频 metadata 后出现黑屏、硬切或错误共享元素状态。
+- **关闭共享元素后的方向返回修复**：共享元素动画关闭时，Home、History、Favorite 等来源页恢复左右方向 fallback；返回目标页保持显式可见，减少返回首页时整页短暂消失或闪白。
+- **预测式返回与共享元素设置解耦**：预测式返回样式不再隐式依赖卡片共享元素开关；关闭共享元素后同步关闭残留的 cover-only 回收路径，降低“看起来仍像共享元素返回”的概率。
+- **视频详情返回动画清理**：修复评论切换播放器时的动画叠加，取消视频卡片返回末尾的额外回弹，减少详情页返回卡片时的二次跳动。
+- **冷启动底栏显示修复**：修正冷启动阶段底栏可见性判定，减少启动后底栏状态和当前页面不一致的问题。
+- **共享元素动效 token 收敛**：新增 `AppMotionTokens.spatialSpec()`，迁移共享元素空间变换弹簧，删除旧 `AnimationSpecs` 入口；参数保持原空间弹簧手感，不改变动画时序。
+- **版本与文档同步**：版本号升级到 `8.3.9 Beta1` / `versionCode 203`，README、README_EN 和更新日志同步到 8.3.9 Beta1。
+
+### 验证
+- `./gradlew :app:testDebugUnitTest --tests 'com.android.purebilibili.core.ui.AppMotionTokensTest'`
+- `./gradlew :app:compileDebugKotlin`
+- `git diff --check`
+
 ## v8.3.8 (2026-05-22)
 
 ### 版本信息
