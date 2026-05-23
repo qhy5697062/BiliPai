@@ -5,11 +5,11 @@
 </p>
 
 <p align="center">
-  <sub>Last updated: 2026-05-23 · Synced to v8.3.9 Beta1 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
+  <sub>Last updated: 2026-05-24 · Synced to v8.3.9 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-8.3.9%20Beta1-fb7299?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/Version-8.3.9-fb7299?style=flat-square" alt="Version">
   <img src="https://img.shields.io/github/stars/jay3-yy/BiliPai?style=flat-square&color=yellow" alt="Stars">
   <img src="https://img.shields.io/github/forks/jay3-yy/BiliPai?style=flat-square&color=green" alt="Forks">
   <img src="https://img.shields.io/github/last-commit/jay3-yy/BiliPai?style=flat-square&color=purple" alt="Last Commit">
@@ -432,14 +432,15 @@ A lightweight plugin format requiring **no coding**, just a simple JSON file to 
 
 See full changelog: [CHANGELOG.md](CHANGELOG.md)
 
-### Latest (v8.3.9 Beta1 · 2026-05-23)
+### Latest (v8.3.9 · 2026-05-24)
 
-- Narrowed video shared-element return routing to real video-detail source pages, reducing stale metadata, hard cuts, and incorrect shared-element states.
-- Restored directional fallback when shared-element animation is disabled for Home, History, Favorite, and related sources while keeping the target page visible during return.
-- Decoupled predictive-back style from the shared-element switch and disabled leftover cover-only return paths when shared elements are off.
-- Fixed animation stacking when switching video-detail comments and player content, and removed the extra end-of-return card rebound.
-- Added `AppMotionTokens.spatialSpec()`, migrated shared-element spatial springs to it, and removed the old `AnimationSpecs` entry while preserving the previous spring feel.
-- Bumped the app to `8.3.9 Beta1` with `versionCode` `203`.
+- Tightened video-detail return, shared-element, and predictive-back routing to reduce black frames, hard cuts, stale sources, and end-of-return rebounds.
+- Added the video-detail share panel and prefer cover-image payloads for system sharing instead of text-only fallbacks.
+- Fixed audio-only mode entry loading, up/down switching, playback state sync, collection switching, and playlist queue handling.
+- Reworked comment image preview into a black immersive 3D flip viewer with only real like, reply, and share actions.
+- Fixed MIUIX top tabs when selecting the fifth tab and restored native indicator styling; iOS top tabs now use a gray-white capsule with a spring-driven shared movement.
+- Cleaned old animation helpers and return rebound leftovers, and consolidated shared-element spatial motion tokens.
+- Bumped the app to `8.3.9` with `versionCode` `204`.
 
 ---
 

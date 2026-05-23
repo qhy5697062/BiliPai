@@ -15,7 +15,7 @@
 </p>
 
 <p>
-  <img src="https://img.shields.io/badge/Version-8.3.9%20Beta1-007AFF?style=flat-square&labelColor=ffffff" alt="Version 8.3.9 Beta1" />
+  <img src="https://img.shields.io/badge/Version-8.3.9-007AFF?style=flat-square&labelColor=ffffff" alt="Version 8.3.9" />
   <img src="https://img.shields.io/badge/Android-8.0%2B-34C759?style=flat-square&logo=android&logoColor=white" alt="Android 8.0+" />
   <img src="https://img.shields.io/badge/Kotlin-100%25-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin" />
   <img src="https://img.shields.io/badge/License-GPL--3.0-FF3B30?style=flat-square" alt="GPL-3.0" />
@@ -37,7 +37,7 @@
   </a>
 </p>
 
-<sub>README 更新：2026-05-23 · 当前构建版本以 app/build.gradle.kts 为准 · 发布记录以 <a href="CHANGELOG.md">CHANGELOG.md</a> 为准</sub>
+<sub>README 更新：2026-05-24 · 当前构建版本以 app/build.gradle.kts 为准 · 发布记录以 <a href="CHANGELOG.md">CHANGELOG.md</a> 为准</sub>
 
 </div>
 
@@ -179,13 +179,14 @@ cd BiliPai
 
 ## 最近更新
 
-当前仓库版本号已更新到 `8.3.9 Beta1 / versionCode 203`。公开发布说明请以 [CHANGELOG.md](CHANGELOG.md) 为准；最新完整记录为 `v8.3.9 Beta1`：
+当前仓库版本号已更新到 `8.3.9 / versionCode 204`。公开发布说明请以 [CHANGELOG.md](CHANGELOG.md) 为准；最新完整记录为 `v8.3.9`：
 
-- 收紧共享元素返回路由，只在真实视频详情返回来源页时启用视频返回转场，减少 stale metadata 导致的黑屏、硬切或错误共享元素状态。
-- 修复关闭共享元素动画后的 Home、History、Favorite 等来源页方向 fallback，并让返回目标页保持可见，减少返回首页时整页短暂消失。
-- 解耦预测式返回样式与共享元素开关，关闭共享元素后同步关闭残留的 cover-only 回收路径。
-- 修复视频详情评论切换播放器时的动画叠加，取消视频卡片返回末尾额外回弹，减少返回卡片二次跳动。
-- 新增 `AppMotionTokens.spatialSpec()` 并迁移共享元素空间变换弹簧，删除旧 `AnimationSpecs` 入口，保持原空间弹簧手感。
+- 收紧视频详情返回、共享元素和预测式返回链路，减少黑屏、硬切、错误来源和返回末尾二次跳动。
+- 新增视频详情分享面板，分享时优先携带封面图片，减少系统分享降级成纯文本。
+- 修复听视频入口空加载、上下切换播放、播放状态、合集切换和合集队列。
+- 评论图片进入黑底沉浸式 3D 反转预览，底部只保留真实点赞、回复和分享能力。
+- 修复 MIUIX 顶栏第五项切换和指示器样式退化；iOS 顶部胶囊改为灰白色并使用更灵动的共享 spring 位移动画。
+- 清理旧动画死代码和返回回弹残留，收敛共享元素空间动效 token。
 
 ## 路线图
 
