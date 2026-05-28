@@ -214,8 +214,8 @@ internal data class HomeTopRightUnreadBadgeLayout(
 
 internal fun resolveHomeTopRightUnreadBadgeLayout(): HomeTopRightUnreadBadgeLayout {
     return HomeTopRightUnreadBadgeLayout(
-        offsetX = (-2).dp,
-        offsetY = 2.dp,
+        offsetX = 7.dp,
+        offsetY = (-5).dp,
         minWidth = 18.dp,
         minHeight = 18.dp,
         horizontalPadding = 5.dp,
@@ -2602,82 +2602,87 @@ fun iOSHomeHeader(
                             Box(
                                 modifier = Modifier
                                     .size(resolveHomeTopSettingsButtonSize(uiPreset, androidNativeVariant))
-                                    .clip(edgeButtonShape)
-                                    .then(
-                                        if (useUnifiedTopPanel) {
-                                            if (useBottomBarMatchedTopControls) {
-                                                Modifier
-                                                    .homeTopBottomBarMatchedSurface(
-                                                        renderMode = localTopChromeRenderMode,
-                                                        shape = edgeButtonShape,
-                                                        hazeState = hazeState,
-                                                        backdrop = backdrop,
-                                                        liquidGlassStyle = liquidStyle,
-                                                        liquidGlassTuning = liquidGlassTuning,
-                                                        motionTier = motionTier,
-                                                        isTransitionRunning = topChromeMotionPolicy.isTransitionRunning,
-                                                        forceLowBlurBudget = forceLowBlurBudget,
-                                                        drawShellLens = false
-                                                    )
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .clip(edgeButtonShape)
+                                        .then(
+                                            if (useUnifiedTopPanel) {
+                                                if (useBottomBarMatchedTopControls) {
+                                                    Modifier
+                                                        .homeTopBottomBarMatchedSurface(
+                                                            renderMode = localTopChromeRenderMode,
+                                                            shape = edgeButtonShape,
+                                                            hazeState = hazeState,
+                                                            backdrop = backdrop,
+                                                            liquidGlassStyle = liquidStyle,
+                                                            liquidGlassTuning = liquidGlassTuning,
+                                                            motionTier = motionTier,
+                                                            isTransitionRunning = topChromeMotionPolicy.isTransitionRunning,
+                                                            forceLowBlurBudget = forceLowBlurBudget,
+                                                            drawShellLens = false
+                                                        )
+                                                } else {
+                                                    Modifier
+                                                        .background(
+                                                            resolveHomeTopEdgeControlContainerColor(
+                                                                isLightMode = isLightMode,
+                                                                renderMode = localTopChromeRenderMode
+                                                            )
+                                                        )
+                                                        .border(
+                                                            width = 0.8.dp,
+                                                            color = resolveHomeTopEdgeControlBorderColor(
+                                                                isLightMode = isLightMode,
+                                                                renderMode = localTopChromeRenderMode
+                                                            ),
+                                                            shape = edgeButtonShape
+                                                        )
+                                                }
                                             } else {
                                                 Modifier
-                                                    .background(
-                                                        resolveHomeTopEdgeControlContainerColor(
-                                                            isLightMode = isLightMode,
-                                                            renderMode = localTopChromeRenderMode
-                                                        )
+                                                    .homeTopChromeSurface(
+                                                        renderMode = localTopChromeRenderMode,
+                                                        shape = edgeButtonShape,
+                                                        surfaceColor = headerChromeColors.containerColor,
+                                                        hazeState = hazeState,
+                                                        backdrop = backdrop,
+                                                        liquidStyle = liquidStyle,
+                                                        liquidGlassTuning = liquidGlassTuning,
+                                                        motionTier = motionTier,
+                                                        isScrolling = topChromeMotionPolicy.isScrolling,
+                                                        isTransitionRunning = topChromeMotionPolicy.isTransitionRunning,
+                                                        forceLowBlurBudget = forceLowBlurBudget
                                                     )
-                                                    .border(
-                                                        width = 0.8.dp,
-                                                        color = resolveHomeTopEdgeControlBorderColor(
-                                                            isLightMode = isLightMode,
-                                                            renderMode = localTopChromeRenderMode
-                                                        ),
-                                                        shape = edgeButtonShape
-                                                    )
+                                                    .border(0.8.dp, headerChromeColors.borderColor, edgeButtonShape)
                                             }
+                                        )
+                                        .then(
+                                            if (uiPreset == UiPreset.MD3) {
+                                                Modifier.clickable {
+                                                    performHomeTopBarTap(haptic = haptic, onClick = onTopRightActionClick)
+                                                }
+                                            } else {
+                                                Modifier.iOSTapEffect {
+                                                    haptic(HapticType.LIGHT)
+                                                    onTopRightActionClick()
+                                                }
+                                            }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        topRightActionIcon,
+                                        contentDescription = topRightActionContentDescription,
+                                        tint = if (isLightMode) {
+                                            topForegroundColor
                                         } else {
-                                            Modifier
-                                                .homeTopChromeSurface(
-                                                    renderMode = localTopChromeRenderMode,
-                                                    shape = edgeButtonShape,
-                                                    surfaceColor = headerChromeColors.containerColor,
-                                                    hazeState = hazeState,
-                                                    backdrop = backdrop,
-                                                    liquidStyle = liquidStyle,
-                                                    liquidGlassTuning = liquidGlassTuning,
-                                                    motionTier = motionTier,
-                                                    isScrolling = topChromeMotionPolicy.isScrolling,
-                                                    isTransitionRunning = topChromeMotionPolicy.isTransitionRunning,
-                                                    forceLowBlurBudget = forceLowBlurBudget
-                                                )
-                                                .border(0.8.dp, headerChromeColors.borderColor, edgeButtonShape)
-                                        }
+                                            topForegroundColor.copy(alpha = topActionIconAlpha)
+                                        },
+                                        modifier = Modifier.size(resolveHomeTopSettingsIconSize(uiPreset, androidNativeVariant))
                                     )
-                                    .then(
-                                        if (uiPreset == UiPreset.MD3) {
-                                            Modifier.clickable {
-                                                performHomeTopBarTap(haptic = haptic, onClick = onTopRightActionClick)
-                                            }
-                                        } else {
-                                            Modifier.iOSTapEffect {
-                                                haptic(HapticType.LIGHT)
-                                                onTopRightActionClick()
-                                            }
-                                        }
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    topRightActionIcon,
-                                    contentDescription = topRightActionContentDescription,
-                                    tint = if (isLightMode) {
-                                        topForegroundColor
-                                    } else {
-                                        topForegroundColor.copy(alpha = topActionIconAlpha)
-                                    },
-                                    modifier = Modifier.size(resolveHomeTopSettingsIconSize(uiPreset, androidNativeVariant))
-                                )
+                                }
                                 if (topRightUnreadBadge != null) {
                                     Box(
                                         modifier = Modifier

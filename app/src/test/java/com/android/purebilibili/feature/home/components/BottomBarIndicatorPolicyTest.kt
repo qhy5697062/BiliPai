@@ -488,7 +488,8 @@ class BottomBarIndicatorPolicyTest {
             0.72f,
             resolveBottomBarIndicatorGlowAlpha(
                 glassEnabled = true,
-                pressProgress = 0.72f
+                pressProgress = 0.72f,
+                motionProgress = 0f
             ),
             0.001f
         )
@@ -496,7 +497,8 @@ class BottomBarIndicatorPolicyTest {
             1f,
             resolveBottomBarIndicatorGlowAlpha(
                 glassEnabled = true,
-                pressProgress = 1.4f
+                pressProgress = 1.4f,
+                motionProgress = 0f
             ),
             0.001f
         )
@@ -504,7 +506,21 @@ class BottomBarIndicatorPolicyTest {
             0f,
             resolveBottomBarIndicatorGlowAlpha(
                 glassEnabled = false,
-                pressProgress = 1f
+                pressProgress = 1f,
+                motionProgress = 1f
+            ),
+            0.001f
+        )
+    }
+
+    @Test
+    fun `indicator glow follows drag motion even without press progress`() {
+        assertEquals(
+            0.64f,
+            resolveBottomBarIndicatorGlowAlpha(
+                glassEnabled = true,
+                pressProgress = 0f,
+                motionProgress = 0.64f
             ),
             0.001f
         )

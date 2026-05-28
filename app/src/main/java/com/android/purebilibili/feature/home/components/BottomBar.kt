@@ -1226,10 +1226,11 @@ internal fun resolveBottomBarLiquidGlassHighlightAlpha(
 
 internal fun resolveBottomBarIndicatorGlowAlpha(
     glassEnabled: Boolean,
-    pressProgress: Float
+    pressProgress: Float,
+    motionProgress: Float = 0f
 ): Float {
     if (!glassEnabled) return 0f
-    return pressProgress.coerceIn(0f, 1f)
+    return maxOf(pressProgress, motionProgress).coerceIn(0f, 1f)
 }
 
 internal fun resolveBottomBarInteractiveHighlightCenterX(
@@ -2921,7 +2922,8 @@ private fun KernelSuAlignedBottomBar(
             )
             val indicatorGlowAlpha = resolveBottomBarIndicatorGlowAlpha(
                 glassEnabled = glassEnabled,
-                pressProgress = effectivePressProgress
+                pressProgress = effectivePressProgress,
+                motionProgress = effectiveIndicatorEffectProgress
             )
             val isBottomBarInteractionActive = dampedDragState.isDragging ||
                 dampedDragState.isRunning ||

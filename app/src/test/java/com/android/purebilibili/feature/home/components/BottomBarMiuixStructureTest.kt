@@ -151,6 +151,7 @@ class BottomBarMiuixStructureTest {
         assertTrue(kernelSuRendererSource.contains("progress = effectiveIndicatorEffectProgress"))
         assertTrue(kernelSuRendererSource.contains("val indicatorGlowAlpha = resolveBottomBarIndicatorGlowAlpha("))
         assertTrue(kernelSuRendererSource.contains("pressProgress = effectivePressProgress"))
+        assertTrue(kernelSuRendererSource.contains("motionProgress = effectiveIndicatorEffectProgress"))
         assertTrue(kernelSuRendererSource.contains("shouldRenderBottomBarRefractionCapture("))
         assertTrue(kernelSuRendererSource.contains("if (shouldRenderIndicatorContentCapture && backdrop != null)"))
         assertTrue(kernelSuRendererSource.contains(".layerBackdrop(tabsBackdrop)"))

@@ -32,15 +32,26 @@ class iOSHomeHeaderVisualPolicyTest {
     }
 
     @Test
-    fun `top right unread badge stays inside action button bounds`() {
+    fun `top right unread badge escapes icon center without clipping`() {
         val layout = resolveHomeTopRightUnreadBadgeLayout()
+        val source = listOf(
+            File("app/src/main/java/com/android/purebilibili/feature/home/components/iOSHomeHeader.kt"),
+            File("src/main/java/com/android/purebilibili/feature/home/components/iOSHomeHeader.kt")
+        ).first { it.exists() }.readText()
+        val topRightButtonSource = source
+            .substringAfter("Spacer(modifier = Modifier.width(resolveHomeTopEdgeControlGap")
+            .substringBefore("if (drawTopSearchDivider)")
 
-        assertTrue(layout.offsetX <= 0.dp)
-        assertTrue(layout.offsetY >= 0.dp)
+        assertTrue(layout.offsetX > 0.dp)
+        assertTrue(layout.offsetY < 0.dp)
         assertEquals(18.dp, layout.minWidth)
         assertEquals(18.dp, layout.minHeight)
         assertEquals(5.dp, layout.horizontalPadding)
         assertEquals(1.dp, layout.verticalPadding)
+        assertTrue(topRightButtonSource.contains(".size(resolveHomeTopSettingsButtonSize"))
+        assertTrue(topRightButtonSource.contains("Box("))
+        assertTrue(topRightButtonSource.contains(".clip(edgeButtonShape)"))
+        assertTrue(topRightButtonSource.contains("topRightUnreadBadgeLayout.offsetX"))
     }
 
     @Test
