@@ -15,7 +15,7 @@
 </p>
 
 <p>
-  <img src="https://img.shields.io/badge/Version-8.7.0-007AFF?style=flat-square&labelColor=ffffff" alt="Version 8.7.0" />
+  <img src="https://img.shields.io/badge/Version-8.8.0-007AFF?style=flat-square&labelColor=ffffff" alt="Version 8.8.0" />
   <img src="https://img.shields.io/badge/Android-8.0%2B-34C759?style=flat-square&logo=android&logoColor=white" alt="Android 8.0+" />
   <img src="https://img.shields.io/badge/Kotlin-100%25-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin" />
   <img src="https://img.shields.io/badge/License-GPL--3.0-FF3B30?style=flat-square" alt="GPL-3.0" />
@@ -182,17 +182,17 @@ cd BiliPai
 
 ## 最近更新
 
-当前仓库版本号已更新到 `8.7.0 / versionCode 211`。公开发布说明请以 [CHANGELOG.md](CHANGELOG.md) 为准；最新完整记录为 `v8.7.0`：
+当前仓库版本号已更新到 `8.8.0 / versionCode 212`。公开发布说明请以 [CHANGELOG.md](CHANGELOG.md) 为准；最新完整记录为 `v8.8.0`：
 
-- 新增 iOS26 底栏液态玻璃预设，提供更厚边缘折射、轻色散和亮面滚动反馈。
-- 修复 iOS26 预设滑动停止时底栏整体闪烁，上下滑动时底栏会连续轻微提亮。
-- 修复首页竖屏视频入口，竖屏视频从首页进入详情时可提前进入竖屏全屏状态。
-- 将“我的”Tab 重写为空间首页式布局，个人资料、收藏和追番内容承载更统一。
-- 修复空间首页视频封面不可见、收藏夹封面字段缺失和服务入口展示不完整。
-- 完善空间首页动态、收藏和追番模块，追番卡片可跳转番剧详情。
-- 修复系统通知页面闪退、通知链接解析和动态时间显示问题。
-- 修复动态顶部遮挡用户信息，动态卡片和转发内容显示更稳定。
-- 修复低版本 Android 上 Haze 视觉效果闪退，并补齐可恢复视觉效果兜底。
+- 打磨 iOS26 底栏液态玻璃滚动上色与辉光，固定停稳亮度、修正残留色并移除人工镀膜。
+- 修复液态玻璃指示器滑动裁剪、折射区域越界、形变采样和捕获层宽度问题。
+- 重做视频封面共享转场，统一首页/空间/相关视频的 sharedElement key，封面映射更稳定。
+- 封面阴影随共享转场补间淡入，消除返回时阴影滞后与封面未落位就突兀出现的硬阴影。
+- 统一视频返回底栏跟手恢复，并修复首页底栏返回时“出现→隐藏→出现”抖动与顶部标签页不可见。
+- 将入场动画替换为 AppEntrance，统一并减少动效门控。
+- 修复首页顶部镀铬 Haze 渲染模式未检查运行时着色器能力的问题。
+- 修复动态侧边栏头像布局与 LIVE 徽章字号，并修复正式版底栏搜索入口失效。
+- 为侧边栏点击增加触觉反馈，缓存媒体解码器探测结果，debug 构建默认关闭诊断日志。
 
 ## 路线图
 

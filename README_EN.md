@@ -5,11 +5,11 @@
 </p>
 
 <p align="center">
-  <sub>Last updated: 2026-05-29 · Synced to v8.7.0 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
+  <sub>Last updated: 2026-05-31 · Synced to v8.8.0 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-8.7.0-fb7299?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/Version-8.8.0-fb7299?style=flat-square" alt="Version">
   <img src="https://img.shields.io/github/stars/jay3-yy/BiliPai?style=flat-square&color=yellow" alt="Stars">
   <img src="https://img.shields.io/github/forks/jay3-yy/BiliPai?style=flat-square&color=green" alt="Forks">
   <img src="https://img.shields.io/github/last-commit/jay3-yy/BiliPai?style=flat-square&color=purple" alt="Last Commit">
@@ -436,17 +436,18 @@ A lightweight plugin format requiring **no coding**, just a simple JSON file to 
 
 See full changelog: [CHANGELOG.md](CHANGELOG.md)
 
-### Latest (v8.7.0 · 2026-05-29)
+### Latest (v8.8.0 · 2026-05-31)
 
-- Bumped the app to `8.7.0` with `versionCode` `211`.
-- Added the iOS26 tuned bottom-bar liquid-glass preset with thicker edge refraction, lighter dispersion, and brighter scroll feedback.
-- Fixed the iOS26 preset bottom-bar flash after scrolling stops; scroll tint now settles continuously.
-- Fixed home vertical-video entry so portrait videos can start in portrait fullscreen before API dimensions arrive.
-- Rebuilt the Mine tab as a space-home style profile surface with profile, favorite, and bangumi sections.
-- Fixed invisible video covers, missing favorite-cover fields, and incomplete service entries on the space-home surface.
-- Completed space-home dynamic, favorite, and bangumi sections, including bangumi-detail navigation from bangumi cards.
-- Fixed system-notice crashes, notice link parsing, dynamic time display, and dynamic user-info overlap.
-- Added recoverable visual-effect fallbacks for low Android versions where Haze-backed effects can crash.
+- Bumped the app to `8.8.0` with `versionCode` `212`.
+- Polished the iOS26 bottom-bar liquid-glass scroll tint and glow, pinned the settled brightness, fixed leftover tint, and dropped the artificial color coating.
+- Fixed liquid-glass indicator scroll clipping, refraction out-of-bounds, deformation sampling, and capture-layer width issues.
+- Reworked the video-cover shared transition, unifying the home/space/related shared-element key for a stable cover mapping.
+- Cover shadow now tweens in with the shared transition, removing the lagging shadow and the abrupt hard shadow that appeared before the cover settled.
+- Unified the video-return bottom-bar restore and fixed the home bottom-bar "show → hide → show" flicker plus invisible top tabs on return.
+- Replaced the entrance animation with AppEntrance, unifying and reducing motion gating.
+- Fixed the home top chrome Haze render mode not checking runtime shader capability.
+- Fixed the dynamic sidebar avatar layout and LIVE badge size, and the broken release-build bottom-bar search entry.
+- Added haptics on sidebar taps, cached media-decoder probing, and disabled diagnostic logs by default in debug builds.
 
 ---
 
