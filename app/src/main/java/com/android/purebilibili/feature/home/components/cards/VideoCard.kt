@@ -692,15 +692,10 @@ fun ElegantVideoCard(
             //  [修复] sharedBounds 仅包裹封面图本身，渐变遮罩/统计标签等目标独有元素留在外部，
             //  避免返回动画期间这些元素依赖 sharedBounds 叠加层初始化导致视觉滞后。
             Box(modifier = coverModifier.fillMaxSize()) {
-                // 🚀 [性能优化] 使用从父级传入的 isDataSaverActive，避免每个卡片重复计算
-                val imageWidth = if (isDataSaverActive) 240 else 360
-                val imageHeight = (imageWidth / coverAspectRatio).roundToInt()
-
-                // 封面图 -  [性能优化] 降低图片尺寸
+                // 由 AsyncImage 根据卡片布局约束选择解码尺寸，避免高质量模式被固定像素限制清晰度。
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(coverUrl)
-                        .size(imageWidth, imageHeight)  // 省流量时使用更小尺寸
                         .crossfade(coverCrossfadeEnabled)
                         .memoryCacheKey(coverCacheKey)
                         .diskCacheKey(coverCacheKey)

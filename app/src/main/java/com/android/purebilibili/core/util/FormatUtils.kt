@@ -8,8 +8,6 @@ import java.util.TimeZone
 object FormatUtils {
     private const val DEFAULT_IMAGE_WIDTH = 640
     private const val DEFAULT_IMAGE_HEIGHT = 400
-    private const val COVER_IMAGE_WIDTH = 480
-    private const val COVER_IMAGE_HEIGHT = 300
     private const val COVER_IMAGE_LOW_WIDTH = 240
     private const val COVER_IMAGE_LOW_HEIGHT = 150
 
@@ -68,7 +66,7 @@ object FormatUtils {
         return if (useLowQuality) {
             buildSizedImageUrl(normalized, width = COVER_IMAGE_LOW_WIDTH, height = COVER_IMAGE_LOW_HEIGHT)
         } else {
-            buildSizedImageUrl(normalized, width = COVER_IMAGE_WIDTH, height = COVER_IMAGE_HEIGHT)
+            normalized
         }
     }
 

@@ -311,12 +311,11 @@ fun GlassVideoCard(
                             .fillMaxSize()
                             .clip(RoundedCornerShape(coverCornerRadius))
                     ) {
-                        //  [性能优化] 降低图片尺寸
+                        // 由 AsyncImage 根据卡片布局约束选择解码尺寸。
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data(coverUrl)
                                 .crossfade(100)  //  缩短淡入时间
-                                .size(360, 225)  //  优化：360x225 替代 480x300
                                 .memoryCacheKey("glass_${video.bvid}")
                                 .diskCacheKey("glass_${video.bvid}")
                                 .build(),

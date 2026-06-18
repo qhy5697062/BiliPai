@@ -253,7 +253,6 @@ fun CinematicVideoCard(
                  AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(coverUrl)
-                        .size(if (isDataSaverActive) 480 else 720) 
                         .crossfade(200)
                         .memoryCacheKey("cover_${video.bvid}_cis")
                         .build(),
