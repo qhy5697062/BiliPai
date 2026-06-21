@@ -124,8 +124,7 @@ internal fun resolveTopTabRowHorizontalPaddingDp(
 internal fun resolveTopTabDockIndicatorHorizontalGapDp(hasOuterChromeSurface: Boolean): Float =
     if (hasOuterChromeSurface) 3f else 3f
 
-internal fun resolveTopTabDockIndicatorVerticalGapDp(hasOuterChromeSurface: Boolean): Float =
-    if (hasOuterChromeSurface) 10f else 4f
+internal fun resolveTopTabDockIndicatorVerticalGapDp(hasOuterChromeSurface: Boolean): Float = 2f
 
 internal fun resolveTopTabDockIndicatorWidthDp(
     itemWidthDp: Float,
@@ -1050,8 +1049,7 @@ private fun LightweightHomeTopTabs(
         val shouldUseMovingIosCapsule = effectiveRenderer == HomeTopTabRenderer.IOS &&
             !skinPlainStyle &&
             !hasSkinStickerIcons
-        val shouldForceDragLiquidGlassIndicator = topTabDragActive && backdrop != null
-        val shouldUseLiquidGlassIndicator = (isLiquidGlassEnabled || shouldForceDragLiquidGlassIndicator) &&
+        val shouldUseLiquidGlassIndicator = isLiquidGlassEnabled &&
             !skinPlainStyle &&
             !hasSkinStickerIcons
         val shouldRenderTopTabLiquidGlassIndicator = shouldUseLiquidGlassIndicator &&
@@ -1165,70 +1163,48 @@ private fun LightweightHomeTopTabs(
                     }
             ) {
                 if (shouldUseMovingIosCapsule) {
-                    if (shouldRenderTopTabLiquidGlassIndicator) {
-                        val capsuleShape = resolveSharedBottomBarCapsuleShape()
-                        val indicatorWidth = resolveTopTabDockIndicatorWidthDp(
-                            itemWidthDp = itemWidth.value,
-                            horizontalGapDp = dockIndicatorHorizontalGap.value
-                        ).dp
-                        KernelSuBottomBarIndicatorLayer(
-                            visible = true,
-                            dockContentAlpha = 1f,
-                            indicatorTranslationXPx = resolveTopTabDockIndicatorOffsetPx(
-                                slotTranslationPx = iosCapsuleTranslationXPx,
-                                horizontalGapPx = with(density) {
-                                    dockIndicatorHorizontalGap.toPx()
-                                }
-                            ),
-                            indicatorPanelOffsetPx = topTabPanelOffsetPx,
-                            indicatorSettleReboundTransform = BottomBarClickPulseTransform(scaleX = 1f),
-                            indicatorWidth = indicatorWidth,
-                            indicatorHeight = dockIndicatorHeight,
-                            shellShape = capsuleShape,
-                            liquidGlassPreset = BottomBarLiquidGlassPreset.BILIPAI_TUNED,
-                            contentBackdrop = effectiveTopTabIndicatorContentBackdrop,
-                            backdrop = effectiveTopTabIndicatorBackdrop,
-                            indicatorLensSpec = topTabIndicatorLensSpec,
-                            effectivePressProgress = topTabPressProgress,
-                            indicatorIdleSurfaceColor = resolveIosTopTabCapsuleContainerColor(
-                                isDarkTheme = isDarkTheme,
-                                selectionFraction = 1f
-                            ),
-                            glassEnabled = true,
-                            motionProgress = topTabMotionProgress,
-                            velocityItemsPerSecond = topTabMotionVelocityItemsPerSecond,
-                            isDragging = topTabShouldStretchIndicator,
-                            indicatorLayerScaleProgress = topTabIndicatorLayerScaleProgress,
-                            indicatorLayerScaleTransform = topTabIndicatorLayerScaleTransform,
-                            bottomBarMotionSpec = topTabDragMotionSpec,
-                            isDarkTheme = isDarkTheme
-                        )
-                    } else {
-                        val capsuleShape = resolveSharedBottomBarCapsuleShape()
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.CenterStart)
-                                .graphicsLayer {
-                                    translationX = iosCapsuleTranslationXPx
-                                    scaleX = topTabIndicatorLayerTransform.scaleX
-                                    scaleY = topTabIndicatorLayerTransform.scaleY
-                                }
-                                .width(itemWidth)
-                                .fillMaxHeight()
-                                .padding(
-                                    horizontal = dockIndicatorHorizontalGap,
-                                    vertical = dockIndicatorVerticalGap
-                                )
-                                .clip(capsuleShape)
-                                .background(
-                                    resolveIosTopTabCapsuleContainerColor(
-                                        isDarkTheme = isDarkTheme,
-                                        selectionFraction = 1f
-                                    ),
-                                    capsuleShape
-                                )
-                        )
-                    }
+                    val capsuleShape = resolveSharedBottomBarCapsuleShape()
+                    val indicatorWidth = resolveTopTabDockIndicatorWidthDp(
+                        itemWidthDp = itemWidth.value,
+                        horizontalGapDp = dockIndicatorHorizontalGap.value
+                    ).dp
+                    KernelSuBottomBarIndicatorLayer(
+                        visible = true,
+                        dockContentAlpha = 1f,
+                        indicatorTranslationXPx = resolveTopTabDockIndicatorOffsetPx(
+                            slotTranslationPx = iosCapsuleTranslationXPx,
+                            horizontalGapPx = with(density) {
+                                dockIndicatorHorizontalGap.toPx()
+                            }
+                        ),
+                        indicatorPanelOffsetPx = if (shouldUseLiquidGlassIndicator) {
+                            topTabPanelOffsetPx
+                        } else {
+                            0f
+                        },
+                        indicatorSettleReboundTransform = BottomBarClickPulseTransform(scaleX = 1f),
+                        indicatorWidth = indicatorWidth,
+                        indicatorHeight = dockIndicatorHeight,
+                        shellShape = capsuleShape,
+                        liquidGlassPreset = BottomBarLiquidGlassPreset.BILIPAI_TUNED,
+                        contentBackdrop = effectiveTopTabIndicatorContentBackdrop,
+                        backdrop = effectiveTopTabIndicatorBackdrop,
+                        indicatorLensSpec = topTabIndicatorLensSpec,
+                        effectivePressProgress = topTabPressProgress,
+                        indicatorIdleSurfaceColor = resolveIosTopTabCapsuleContainerColor(
+                            isDarkTheme = isDarkTheme,
+                            selectionFraction = 1f
+                        ),
+                        glassEnabled = shouldUseLiquidGlassIndicator,
+                        indicatorEffectsEnabled = shouldUseLiquidGlassIndicator,
+                        motionProgress = topTabMotionProgress,
+                        velocityItemsPerSecond = topTabMotionVelocityItemsPerSecond,
+                        isDragging = topTabShouldStretchIndicator,
+                        indicatorLayerScaleProgress = topTabIndicatorLayerScaleProgress,
+                        indicatorLayerScaleTransform = topTabIndicatorLayerScaleTransform,
+                        bottomBarMotionSpec = topTabDragMotionSpec,
+                        isDarkTheme = isDarkTheme
+                    )
                 }
                 if (shouldUseMd3DockBackedCapsule) {
                     KernelSuBottomBarIndicatorLayer(

@@ -140,28 +140,28 @@ class TopTabIndicatorGeometryTest {
     }
 
     @Test
-    fun `top tab dock indicator uses flatter geometry with outer chrome`() {
+    fun `top tab dock indicator leaves only a small gap with outer chrome`() {
         assertEquals(
             3f,
             resolveTopTabDockIndicatorHorizontalGapDp(hasOuterChromeSurface = true),
             0.01f
         )
         assertEquals(
-            10f,
+            2f,
             resolveTopTabDockIndicatorVerticalGapDp(hasOuterChromeSurface = true),
             0.01f
         )
     }
 
     @Test
-    fun `top tab dock indicator preserves legacy gap without outer dock`() {
+    fun `top tab dock indicator uses the same small gap without outer dock`() {
         assertEquals(
             3f,
             resolveTopTabDockIndicatorHorizontalGapDp(hasOuterChromeSurface = false),
             0.01f
         )
         assertEquals(
-            4f,
+            2f,
             resolveTopTabDockIndicatorVerticalGapDp(hasOuterChromeSurface = false),
             0.01f
         )
@@ -180,13 +180,13 @@ class TopTabIndicatorGeometryTest {
             horizontalGapDp = horizontalGap
         )
         val height = resolveTopTabDockIndicatorHeightDp(
-            rowHeightDp = 56f,
+            rowHeightDp = 52f,
             verticalGapDp = verticalGap,
             minHeightDp = 2f
         )
 
         assertEquals(90f, width, 0.01f)
-        assertEquals(36f, height, 0.01f)
+        assertEquals(48f, height, 0.01f)
     }
 
     @Test

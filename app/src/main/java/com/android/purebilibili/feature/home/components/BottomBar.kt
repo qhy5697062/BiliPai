@@ -4187,9 +4187,7 @@ internal fun BoxScope.KernelSuBottomBarIndicatorLayer(
                     )
                 } else {
                     background(
-                        resolveAndroidNativeIdleIndicatorSurfaceColor(
-                            darkTheme = isDarkTheme
-                        ),
+                        indicatorIdleSurfaceColor,
                         shellShape
                     )
                 }

@@ -384,10 +384,27 @@ class TopTabStylePolicyTest {
         val gestureBlock = source
             .substringAfter("private fun Modifier.topTabSelectedItemDrag(")
             .substringBefore("@Composable\nprivate fun")
+        val iosIndicatorBlock = source
+            .substringAfter("if (shouldUseMovingIosCapsule) {")
+            .substringBefore("if (shouldUseMd3DockBackedCapsule)")
+        val chromeSource = sourceText(
+            "app/src/main/java/com/android/purebilibili/feature/home/components/HomeTopTabChrome.kt"
+        )
+        val bottomBarIndicatorBlock = sourceText(
+            "app/src/main/java/com/android/purebilibili/feature/home/components/BottomBar.kt"
+        ).substringAfter("internal fun BoxScope.KernelSuBottomBarIndicatorLayer(")
+            .substringBefore("@Composable\nprivate fun BoxScope.KernelSuBottomBarInputLayer(")
 
         assertTrue(gestureBlock.contains("awaitHorizontalTouchSlopOrCancellation"))
         assertFalse(gestureBlock.contains("awaitLongPressOrCancellation"))
-        assertTrue(source.contains("KernelSuBottomBarIndicatorLayer("))
+        assertTrue(iosIndicatorBlock.contains("KernelSuBottomBarIndicatorLayer("))
+        assertEquals(1, iosIndicatorBlock.split("KernelSuBottomBarIndicatorLayer(").size - 1)
+        assertTrue(iosIndicatorBlock.contains("glassEnabled = shouldUseLiquidGlassIndicator"))
+        assertTrue(iosIndicatorBlock.contains("indicatorEffectsEnabled = shouldUseLiquidGlassIndicator"))
+        assertFalse(iosIndicatorBlock.contains(".fillMaxHeight()"))
+        assertFalse(source.contains("shouldForceDragLiquidGlassIndicator"))
+        assertFalse(chromeSource.contains("Modifier.clip(tabShape)"))
+        assertTrue(bottomBarIndicatorBlock.contains("background(\n                        indicatorIdleSurfaceColor,"))
     }
 
     @Test

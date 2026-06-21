@@ -139,7 +139,6 @@ internal fun HomeTopTabChrome(
                         Modifier
                     }
                 )
-                .then(if (drawChromeSurface) Modifier.clip(tabShape) else Modifier)
                 .then(
                     if (drawChromeSurface) {
                         if (useBottomBarMatchedSurface) {
