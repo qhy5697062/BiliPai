@@ -1666,7 +1666,7 @@ private fun AboutProjectOverviewCard(
         Column(modifier = Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
-                    painter = painterResource(id = R.mipmap.ic_launcher_bilipai),
+                    painter = painterResource(id = R.mipmap.ic_launcher_bilipai_foreground),
                     contentDescription = "BiliPai 图标",
                     modifier = Modifier
                         .size(72.dp)

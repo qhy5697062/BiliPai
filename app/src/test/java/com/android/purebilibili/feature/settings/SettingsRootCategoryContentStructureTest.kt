@@ -197,6 +197,21 @@ class SettingsRootCategoryContentStructureTest {
     }
 
     @Test
+    fun aboutProjectOverview_usesRasterLauncherAssetForComposePainter() {
+        val source = listOf(
+            File("app/src/main/java/com/android/purebilibili/feature/settings/ui/SettingsSections.kt"),
+            File("src/main/java/com/android/purebilibili/feature/settings/ui/SettingsSections.kt")
+        ).first { it.exists() }.readText()
+
+        val overviewBlock = source
+            .substringAfter("private fun AboutProjectOverviewCard(")
+            .substringBefore("@Composable\nprivate fun ContributorAvatarRow(")
+
+        assertFalse(overviewBlock.contains("R.mipmap.ic_launcher_bilipai)"))
+        assertTrue(overviewBlock.contains("R.mipmap.ic_launcher_bilipai_foreground"))
+    }
+
+    @Test
     fun aboutSection_doesNotRenderDuplicateReleaseChannelDisclaimerEntry() {
         val source = listOf(
             File("app/src/main/java/com/android/purebilibili/feature/settings/ui/SettingsSections.kt"),
