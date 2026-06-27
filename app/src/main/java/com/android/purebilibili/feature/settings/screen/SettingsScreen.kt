@@ -75,6 +75,7 @@ import kotlinx.coroutines.launch
 import com.android.purebilibili.core.ui.components.IOSSectionTitle
 import com.android.purebilibili.core.ui.animation.EntranceGroup
 import com.android.purebilibili.core.ui.animation.entrance
+import com.android.purebilibili.core.ui.motion.rememberSystemReduceMotion
 import com.android.purebilibili.feature.dynamic.defaultDynamicTabVisibleIds
 import com.android.purebilibili.feature.dynamic.resolveDynamicVisibleTabIdsAfterToggle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -1281,6 +1282,7 @@ private fun MobileSettingsLayout(
     homeRefreshCount: Int,
     onHomeRefreshCountChange: (Int) -> Unit
 ) {
+    val context = LocalContext.current
     val listState = rememberLazyListState()
     val windowSizeClass = LocalWindowSizeClass.current
     val deviceUiProfile = remember(windowSizeClass.widthSizeClass) {
@@ -1295,6 +1297,15 @@ private fun MobileSettingsLayout(
             SettingsRootCategory.entries.firstOrNull { it.name == name }
         }
     }
+    val bodyDestination = remember(searchQuery, activeRootCategory) {
+        resolveSettingsRootBodyDestination(
+            searchQuery = searchQuery,
+            activeCategory = activeRootCategory
+        )
+    }
+    val entranceAnimationEnabled by SettingsManager.getUiEntranceAnimationEnabled(context)
+        .collectAsStateWithLifecycle(initialValue = true)
+    val reduceMotion = rememberSystemReduceMotion()
     val focusRequest by SettingsSearchFocusController.request.collectAsStateWithLifecycle()
     val bottomBarVisible = LocalBottomBarVisible.current
     val bottomInset = resolveSettingsContentBottomPadding(
@@ -1430,7 +1441,6 @@ private fun MobileSettingsLayout(
         containerColor = AppSurfaceTokens.groupedListContainer(),
         contentWindowInsets = WindowInsets(0.dp)
     ) { padding ->
-        EntranceGroup {
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -1446,88 +1456,94 @@ private fun MobileSettingsLayout(
             }
 
             item {
-                if (searchQuery.isBlank() && activeRootCategory == null) {
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                            .entrance()
-                    ) {
-                        SettingsRootCategoryListSection(
-                            categories = sectionOrder,
-                            onCategoryClick = { category ->
-                                activeRootCategoryName = category.name
-                            }
+                AnimatedContent(
+                    targetState = bodyDestination,
+                    transitionSpec = {
+                        resolveSettingsRootCategoryContentTransform(
+                            animationEnabled = entranceAnimationEnabled,
+                            reduceMotion = reduceMotion
                         )
-                    }
-                }
-            }
-
-            if (searchQuery.isNotBlank()) {
-                item {
-                    SettingsSearchResultsSection(
-                        results = searchResults,
-                        onResultClick = { result ->
-                            val category = resolveSettingsRootCategoryForSearchTarget(result.target)
-                            if (isSceneSettingsSearchTarget(result.target) && category != null) {
-                                activeRootCategoryName = category.name
-                                onSearchQueryChange("")
-                            } else {
-                                onSearchResultClick(result)
+                    },
+                    label = "SettingsRootBody"
+                ) { destination ->
+                    val settled = !transition.isRunning
+                    EntranceGroup(startWhen = settled) {
+                        when (destination) {
+                            SettingsRootBodyDestination.Home -> {
+                                Column {
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(top = 8.dp)
+                                            .entrance()
+                                    ) {
+                                        SettingsRootCategoryListSection(
+                                            categories = sectionOrder,
+                                            onCategoryClick = { category ->
+                                                activeRootCategoryName = category.name
+                                            }
+                                        )
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(top = 16.dp)
+                                            .entrance()
+                                    ) {
+                                        SettingsAboutHomeSection(
+                                            onGithubClick = onGithubClick,
+                                            onTelegramClick = onTelegramClick,
+                                            onCheckUpdateClick = onCheckUpdateClick,
+                                            onDonateClick = onDonateClick
+                                        )
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(top = 16.dp)
+                                            .entrance()
+                                    ) {
+                                        SettingsBackupHomeSection(
+                                            onSettingsShareClick = onSettingsShareClick,
+                                            onWebDavBackupClick = onWebDavBackupClick,
+                                            onClearCacheClick = onClearCacheClick,
+                                            cacheSize = cacheSize
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
+                            }
+                            is SettingsRootBodyDestination.Category -> {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(top = 12.dp)
+                                        .entrance()
+                                ) {
+                                    SettingsRootCategoryContent(
+                                        category = destination.category,
+                                        actions = rootCategoryActions,
+                                        state = rootCategoryState
+                                    )
+                                }
+                            }
+                            SettingsRootBodyDestination.Search -> {
+                                Column {
+                                    SettingsSearchResultsSection(
+                                        results = searchResults,
+                                        onResultClick = { result ->
+                                            val category = resolveSettingsRootCategoryForSearchTarget(result.target)
+                                            if (isSceneSettingsSearchTarget(result.target) && category != null) {
+                                                activeRootCategoryName = category.name
+                                                onSearchQueryChange("")
+                                            } else {
+                                                onSearchResultClick(result)
+                                            }
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
                             }
                         }
-                    )
-                }
-                item { Spacer(modifier = Modifier.height(16.dp)) }
-            } else {
-                val category = activeRootCategory
-                if (category != null) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .padding(top = 12.dp)
-                                .entrance()
-                        ) {
-                            SettingsRootCategoryContent(
-                                category = category,
-                                actions = rootCategoryActions,
-                                state = rootCategoryState
-                            )
-                        }
                     }
-                } else {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .padding(top = 16.dp)
-                                .entrance()
-                        ) {
-                            SettingsAboutHomeSection(
-                                onGithubClick = onGithubClick,
-                                onTelegramClick = onTelegramClick,
-                                onCheckUpdateClick = onCheckUpdateClick,
-                                onDonateClick = onDonateClick
-                            )
-                        }
-                    }
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .padding(top = 16.dp)
-                                .entrance()
-                        ) {
-                            SettingsBackupHomeSection(
-                                onSettingsShareClick = onSettingsShareClick,
-                                onWebDavBackupClick = onWebDavBackupClick,
-                                onClearCacheClick = onClearCacheClick,
-                                cacheSize = cacheSize
-                            )
-                        }
-                    }
-
-                    item { Spacer(modifier = Modifier.height(16.dp)) }
                 }
             }
-        }
         }
     }
 }

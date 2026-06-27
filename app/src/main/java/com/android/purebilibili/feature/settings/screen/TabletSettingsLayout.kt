@@ -3,11 +3,6 @@ package com.android.purebilibili.feature.settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -35,6 +30,8 @@ import com.android.purebilibili.core.ui.AdaptiveSplitLayout
 import com.android.purebilibili.core.ui.AppSurfaceTokens
 import com.android.purebilibili.core.ui.globalWallpaperAwareBackground
 import com.android.purebilibili.core.ui.rememberAppBackIcon
+import com.android.purebilibili.core.ui.animation.EntranceGroup
+import com.android.purebilibili.core.ui.motion.rememberSystemReduceMotion
 import com.android.purebilibili.core.ui.rememberAppSettingsIcon
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.launch
@@ -151,6 +148,9 @@ fun TabletSettingsLayout(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val fallbackCategoryIcon = rememberAppSettingsIcon()
     val categoryOrder = remember { resolveTabletSettingsRootCategoryOrder() }
+    val entranceAnimationEnabled by SettingsManager.getUiEntranceAnimationEnabled(context)
+        .collectAsStateWithLifecycle(initialValue = true)
+    val reduceMotion = rememberSystemReduceMotion()
     val rootCategoryActions = SettingsRootCategoryActions(
         onAppearanceClick = { activeDetail = SettingsDetail.APPEARANCE },
         onAnimationClick = { activeDetail = SettingsDetail.ANIMATION },
@@ -620,40 +620,47 @@ fun TabletSettingsLayout(
                         modifier = Modifier.fillMaxSize(),
                         targetState = selectedCategory,
                         transitionSpec = {
-                            (slideInVertically { height -> height } + fadeIn()).togetherWith(
-                                slideOutVertically { height -> -height } + fadeOut())
+                            resolveSettingsRootCategoryContentTransform(
+                                animationEnabled = entranceAnimationEnabled,
+                                reduceMotion = reduceMotion
+                            )
                         },
                         label = "SettingsDetailTransition"
                     ) { category ->
-                        Column(modifier = Modifier
-                            .fillMaxSize()
-                            .widthIn(max = layoutPolicy.rootPanelMaxWidthDp.dp)
-                            .verticalScroll(rememberScrollState())
-                        ) {
-                            Spacer(
+                        val settled = !transition.isRunning
+                        EntranceGroup(startWhen = settled) {
+                            Column(
                                 modifier = Modifier
-                                    .height(layoutPolicy.detailPanePaddingDp.dp)
-                                    .statusBarsPadding()
-                            )
+                                    .fillMaxSize()
+                                    .widthIn(max = layoutPolicy.rootPanelMaxWidthDp.dp)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                Spacer(
+                                    modifier = Modifier
+                                        .height(layoutPolicy.detailPanePaddingDp.dp)
+                                        .statusBarsPadding()
+                                )
 
-                            Text(
-                                text = category.title,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .padding(bottom = 12.dp, start = 16.dp)
-                            )
-                            
-                            SettingsRootCategoryContent(
-                                category = category,
-                                actions = rootCategoryActions,
-                                state = rootCategoryState
-                            )
-                            Spacer(modifier = Modifier
-                                .windowInsetsBottomHeight(WindowInsets.navigationBars)
-                            )
-        }
-    }
+                                Text(
+                                    text = category.title,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier
+                                        .padding(bottom = 12.dp, start = 16.dp)
+                                )
+
+                                SettingsRootCategoryContent(
+                                    category = category,
+                                    actions = rootCategoryActions,
+                                    state = rootCategoryState
+                                )
+                                Spacer(
+                                    modifier = Modifier
+                                        .windowInsetsBottomHeight(WindowInsets.navigationBars)
+                                )
+                            }
+                        }
+                    }
 
     pendingLanguageRestart?.let { pendingLanguage ->
         AlertDialog(

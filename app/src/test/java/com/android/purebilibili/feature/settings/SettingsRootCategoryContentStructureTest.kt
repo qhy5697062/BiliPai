@@ -137,6 +137,9 @@ class SettingsRootCategoryContentStructureTest {
 
         assertTrue(source.contains("activeRootCategoryName"))
         assertTrue(source.contains("SettingsRootCategoryContent("))
+        assertTrue(source.contains("AnimatedContent("))
+        assertTrue(source.contains("resolveSettingsRootCategoryContentTransform("))
+        assertTrue(source.contains("label = \"SettingsRootBody\""))
         assertFalse(source.contains("isExpanded ="), "should not use accordion isExpanded")
         assertFalse(source.contains("onToggle ="), "should not use accordion onToggle")
         assertFalse(source.contains("expandedRootCategoryNames"))
