@@ -1,5 +1,8 @@
 package com.android.purebilibili.core.ui.transition
 
+import android.graphics.RenderEffect
+import android.graphics.Shader
+import android.os.Build
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -11,11 +14,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.navigation3.ui.LocalNavAnimatedContentScope
+import com.android.purebilibili.core.ui.adaptive.resolveDeviceUiProfile
+import com.android.purebilibili.core.util.LocalWindowSizeClass
 import com.android.purebilibili.navigation3.BiliPaiNavKey
 import com.android.purebilibili.navigation3.BiliPaiNavRouteTransition
 
@@ -62,31 +69,53 @@ internal fun Modifier.videoCardShellSharedBoundsOrEmpty(
 @Composable
 internal fun VideoSharedTransitionBackdropHost(
     cardTransitionEnabled: Boolean,
-    sharedElementRouteTransition: Boolean,
     entryKey: BiliPaiNavKey,
     topKey: BiliPaiNavKey?,
+    maxBlurRadiusDp: Float,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    val navTransition = LocalNavAnimatedContentScope.current.transition
-    val transitionInProgress = navTransition.currentState != navTransition.targetState ||
-        navTransition.isRunning
+    val session = LocalVideoCardTransitionSession.current
     val entryInvolvesVideoDetail = topKey is BiliPaiNavKey.VideoDetail
     val entryIsUnderlyingSource = entryKey !is BiliPaiNavKey.VideoDetail && entryKey != topKey
+    val direction = remember(session.phase) {
+        when (session.phase) {
+            VideoCardTransitionPhase.EXPANDING -> VideoCardTransitionDirection.EXPAND
+            VideoCardTransitionPhase.COLLAPSING -> VideoCardTransitionDirection.COLLAPSE
+            VideoCardTransitionPhase.EXPANDED,
+            VideoCardTransitionPhase.IDLE -> VideoCardTransitionDirection.COLLAPSE
+        }
+    }
+    val windowSizeClass = LocalWindowSizeClass.current
+    val motionTier = remember(windowSizeClass.widthSizeClass) {
+        resolveDeviceUiProfile(windowSizeClass.widthSizeClass).motionTier
+    }
     val frame = remember(
         cardTransitionEnabled,
-        sharedElementRouteTransition,
-        transitionInProgress,
+        session,
         entryInvolvesVideoDetail,
-        entryIsUnderlyingSource
+        entryIsUnderlyingSource,
+        maxBlurRadiusDp,
+        direction,
+        motionTier
     ) {
-        resolveVideoSharedTransitionBackdropFrame(
-            cardTransitionEnabled = cardTransitionEnabled,
-            sharedElementRouteTransition = sharedElementRouteTransition,
-            transitionInProgress = transitionInProgress,
-            entryInvolvesVideoDetail = entryInvolvesVideoDetail,
-            entryIsUnderlyingSource = entryIsUnderlyingSource
-        )
+        if (!shouldApplyVideoCardTransitionBackdropToEntry(
+                cardTransitionEnabled = cardTransitionEnabled,
+                session = session,
+                entryInvolvesVideoDetail = entryInvolvesVideoDetail,
+                entryIsUnderlyingSource = entryIsUnderlyingSource
+            )
+        ) {
+            inactiveVideoCardTransitionBackdropFrame()
+        } else {
+            resolveVideoCardTransitionBackdropFrame(
+                session = session,
+                direction = direction,
+                skipBackdropEffects = false,
+                motionTier = motionTier,
+                maxBlurRadiusDp = maxBlurRadiusDp
+            )
+        }
     }
     VideoSharedTransitionBackdropDecoration(
         frame = frame,
@@ -97,25 +126,34 @@ internal fun VideoSharedTransitionBackdropHost(
 
 @Composable
 internal fun VideoSharedTransitionBackdropDecoration(
-    frame: VideoSharedTransitionBackdropFrame,
+    frame: VideoCardTransitionBackdropFrame,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
+    val density = LocalDensity.current
+    val blurRadiusPx = with(density) { frame.blurRadiusDp.dp.toPx() }
     Box(modifier = modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .then(
-                    if (frame.enabled && frame.blurRadiusDp > 0f) {
-                        Modifier.blur(frame.blurRadiusDp.dp)
+                .graphicsLayer {
+                    scaleX = frame.scale
+                    scaleY = frame.scale
+                    transformOrigin = TransformOrigin(0.5f, 0.5f)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && blurRadiusPx > 0.5f) {
+                        renderEffect = RenderEffect.createBlurEffect(
+                            blurRadiusPx,
+                            blurRadiusPx,
+                            Shader.TileMode.CLAMP
+                        ).asComposeRenderEffect()
                     } else {
-                        Modifier
+                        renderEffect = null
                     }
-                )
+                }
         ) {
             content()
         }
-        if (frame.enabled && frame.scrimAlpha > 0f) {
+        if (frame.scrimAlpha > 0f) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

@@ -88,6 +88,8 @@ import com.android.purebilibili.core.ui.LocalSharedTransitionScope
 import com.android.purebilibili.core.ui.transition.LocalVideoCardSharedElementSourceRoute
 import com.android.purebilibili.core.ui.transition.LocalVideoSharedTransitionSpeedSettings
 import com.android.purebilibili.core.ui.transition.VideoSharedTransitionSpeedSettings
+import com.android.purebilibili.core.ui.transition.rememberVideoCardTransitionController
+import com.android.purebilibili.core.ui.transition.shouldDriveVideoCardTransitionBackdrop
 import com.android.purebilibili.data.model.response.BgmInfo
 
 import androidx.compose.ui.zIndex
@@ -513,6 +515,47 @@ fun AppNavigation(
                 cardTransitionEnabled = cardTransitionEnabled
             )
         }
+        val videoCardTransitionController = rememberVideoCardTransitionController(
+            enabled = cardTransitionEnabled,
+            speedSettings = VideoSharedTransitionSpeedSettings(
+                speed = homeSettings.videoSharedTransitionSpeed,
+                customDurationMillis = homeSettings.videoSharedTransitionCustomDurationMillis
+            )
+        )
+        fun isSharedVideoCardTransitionReady(sourceKey: String?): Boolean {
+            return CardPositionManager.lastClickedCardBounds != null &&
+                CardPositionManager.lastClickedVideoSourceKey == sourceKey &&
+                CardPositionManager.isCardFullyVisible
+        }
+        fun beginVideoCardBackdropExpandIfReady(sourceKey: String?) {
+            if (
+                shouldDriveVideoCardTransitionBackdrop(
+                    cardTransitionEnabled = cardTransitionEnabled,
+                    sharedTransitionReady = isSharedVideoCardTransitionReady(sourceKey)
+                )
+            ) {
+                videoCardTransitionController.beginExpand()
+            }
+        }
+        fun beginVideoCardBackdropCollapseAfterReturn(skipBackdropEffects: Boolean) {
+            if (
+                shouldDriveVideoCardTransitionBackdrop(
+                    cardTransitionEnabled = cardTransitionEnabled,
+                    sharedTransitionReady = isSharedVideoCardTransitionReady(
+                        navigation3ReturnSession.lastVideoSourceKey
+                    )
+                )
+            ) {
+                videoCardTransitionController.beginCollapse(skipBackdropEffects = skipBackdropEffects)
+            }
+        }
+        fun markVideoReturnAndBeginBackdropCollapse(): BiliPaiReturnSessionState {
+            navigation3ReturnSession = navigation3ReturnSession.markReturning(SystemClock.uptimeMillis())
+            beginVideoCardBackdropCollapseAfterReturn(
+                skipBackdropEffects = navigation3ReturnSession.isQuickReturnFromDetail
+            )
+            return navigation3ReturnSession
+        }
         val isAtMainHostRoot = navigation3BackStack.lastOrNull() == BiliPaiNavKey.MainHost
         val systemBackAction = remember(
             isAtMainHostRoot,
@@ -708,6 +751,7 @@ fun AppNavigation(
             navigation3ReturnSession = navigation3ReturnSession
                 .recordVideoSource(source)
                 .markDetailEntered(SystemClock.uptimeMillis())
+            beginVideoCardBackdropExpandIfReady(source.key)
             if (
                 shouldPrimeBottomBarHiddenBeforeVideoNavigation(
                     sourceRoute = source.route,
@@ -1167,8 +1211,7 @@ fun AppNavigation(
                 val fromRoute = navigation3BackStack.lastOrNull()?.toLegacyRoute()
                 val targetRoute = targetKey?.toLegacyRoute()
                 if (isVideoDetailRoute(fromRoute) && isVideoCardReturnTargetRoute(targetRoute)) {
-                    navigation3ReturnSession =
-                        navigation3ReturnSession.markReturning(SystemClock.uptimeMillis())
+                    markVideoReturnAndBeginBackdropCollapse()
                 }
             }
 
@@ -1686,8 +1729,7 @@ fun AppNavigation(
                                 isReturningFromDetail = navigation3ReturnSession.isReturningFromDetail,
                                 isQuickReturningFromDetail = navigation3ReturnSession.isQuickReturnFromDetail,
                                 onMarkReturningFromDetail = {
-                                    navigation3ReturnSession =
-                                        navigation3ReturnSession.markReturning(SystemClock.uptimeMillis())
+                                    markVideoReturnAndBeginBackdropCollapse()
                                 },
                                 onClearReturningFromDetail = {
                                     navigation3ReturnSession = navigation3ReturnSession.clearReturning()
@@ -1701,14 +1743,12 @@ fun AppNavigation(
                                 transitionEnterDurationMillis = navMotionSpec.slowFadeDurationMillis,
                                 transitionMaxBlurRadiusPx = navMotionSpec.maxBackdropBlurRadius,
                                 onBack = {
-                                    navigation3ReturnSession =
-                                        navigation3ReturnSession.markReturning(SystemClock.uptimeMillis())
+                                    markVideoReturnAndBeginBackdropCollapse()
                                     prepareVideoPlaybackForNavigationExit(videoKey)
                                     navigation3BackStack = popBiliPaiNavKey(navigation3BackStack)
                                 },
                                 onHomeClick = {
-                                    navigation3ReturnSession =
-                                        navigation3ReturnSession.markReturning(SystemClock.uptimeMillis())
+                                    markVideoReturnAndBeginBackdropCollapse()
                                     prepareVideoPlaybackForNavigationExit(videoKey)
                                     // 先把 bottom pager 静默切到 HOME（被详情页遮挡，切换不可见），
                                     // 再 pop 至 MainHost 触发与系统返回相同的横向过渡。
@@ -2488,7 +2528,9 @@ fun AppNavigation(
                     modifier = Modifier.fillMaxSize(),
                     sharedTransitionScope = LocalSharedTransitionScope.current,
                     visibleBottomBarRoutes = visibleBottomBarRoutes,
-                    activeMainHostRoute = activeBottomTabRoute
+                    activeMainHostRoute = activeBottomTabRoute,
+                    videoCardTransitionController = videoCardTransitionController,
+                    maxVideoCardTransitionBlurRadiusDp = navMotionSpec.maxBackdropBlurRadius
                 ) { key ->
                     RenderNavigationContent(key)
                 }
