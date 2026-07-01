@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.android.purebilibili.core.theme.AndroidNativeVariant
 import com.android.purebilibili.core.theme.LocalAndroidNativeVariant
 import com.android.purebilibili.core.theme.LocalUiPreset
 import com.android.purebilibili.core.theme.UiPreset
@@ -50,19 +51,23 @@ internal data class AdaptiveBottomSheetMotionSpec(
 )
 
 internal fun resolveAdaptiveBottomSheetVisualSpec(
-    uiPreset: UiPreset
+    uiPreset: UiPreset,
+    androidNativeVariant: AndroidNativeVariant = AndroidNativeVariant.MATERIAL3
 ): AdaptiveBottomSheetVisualSpec {
-    return if (uiPreset == UiPreset.MD3) {
-        AdaptiveBottomSheetVisualSpec(
-            cornerRadiusDp = 28,
-            useMaterialDragHandle = true
-        )
+    val cornerLevel = if (uiPreset == UiPreset.MD3) {
+        ContainerLevel.Pill
     } else {
-        AdaptiveBottomSheetVisualSpec(
-            cornerRadiusDp = 14,
-            useMaterialDragHandle = false
-        )
+        ContainerLevel.Dialog
     }
+    val cornerRadiusDp = AppShapes.resolveContainerCornerDp(
+        level = cornerLevel,
+        uiPreset = uiPreset,
+        androidNativeVariant = androidNativeVariant
+    ).value.toInt()
+    return AdaptiveBottomSheetVisualSpec(
+        cornerRadiusDp = cornerRadiusDp,
+        useMaterialDragHandle = uiPreset == UiPreset.MD3
+    )
 }
 
 internal fun resolveAdaptiveBottomSheetMotionSpec(

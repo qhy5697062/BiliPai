@@ -92,6 +92,34 @@ internal fun resolveEffectiveDynamicColorEnabled(
     uiPreset: UiPreset
 ): Boolean = dynamicColorEnabled
 
+internal fun createIosColorScheme(
+    primaryColor: Color,
+    darkTheme: Boolean,
+    amoledDarkTheme: Boolean
+): ColorScheme = when {
+    darkTheme && amoledDarkTheme -> createAmoledDarkColorScheme(primaryColor)
+    darkTheme -> createDarkColorScheme(primaryColor)
+    else -> createLightColorScheme(primaryColor)
+}
+
+internal fun alignIosColorSchemeWithDynamicAccent(
+    baseScheme: ColorScheme,
+    dynamicAccentScheme: ColorScheme
+): ColorScheme = baseScheme.copy(
+    primary = dynamicAccentScheme.primary,
+    onPrimary = dynamicAccentScheme.onPrimary,
+    primaryContainer = dynamicAccentScheme.primaryContainer,
+    onPrimaryContainer = dynamicAccentScheme.onPrimaryContainer,
+    secondary = dynamicAccentScheme.secondary,
+    onSecondary = dynamicAccentScheme.onSecondary,
+    secondaryContainer = dynamicAccentScheme.secondaryContainer,
+    onSecondaryContainer = dynamicAccentScheme.onSecondaryContainer,
+    tertiary = dynamicAccentScheme.tertiary,
+    onTertiary = dynamicAccentScheme.onTertiary,
+    tertiaryContainer = dynamicAccentScheme.tertiaryContainer,
+    onTertiaryContainer = dynamicAccentScheme.onTertiaryContainer
+)
+
 internal fun shouldObserveSystemWallpaperForDynamicColor(
     dynamicColorActive: Boolean,
     sdkInt: Int
@@ -675,6 +703,32 @@ private fun rememberSystemWallpaperRefreshToken(
 }
 
 @Composable
+private fun rememberIosColorScheme(
+    seedColor: Color,
+    darkTheme: Boolean,
+    amoledDarkTheme: Boolean,
+    dynamicAccentScheme: ColorScheme? = null
+): ColorScheme {
+    val baseScheme = remember(seedColor, darkTheme, amoledDarkTheme) {
+        createIosColorScheme(
+            primaryColor = seedColor,
+            darkTheme = darkTheme,
+            amoledDarkTheme = amoledDarkTheme
+        )
+    }
+    return remember(baseScheme, dynamicAccentScheme) {
+        if (dynamicAccentScheme != null) {
+            alignIosColorSchemeWithDynamicAccent(
+                baseScheme = baseScheme,
+                dynamicAccentScheme = dynamicAccentScheme
+            )
+        } else {
+            baseScheme
+        }
+    }
+}
+
+@Composable
 private fun rememberKernelSuStyleColorScheme(
     seedColor: Color,
     darkTheme: Boolean,
@@ -794,22 +848,40 @@ fun PureBiliBiliTheme(
     } else {
         null
     }
-    val lightMaterialScheme = rememberKernelSuStyleColorScheme(
-        seedColor = customPrimaryColor,
-        darkTheme = false,
-        amoledDarkTheme = false,
-        paletteStyle = colorStyle,
-        colorSpec = colorSpec,
-        dynamicBaseScheme = dynamicLightBaseScheme
-    )
-    val darkMaterialScheme = rememberKernelSuStyleColorScheme(
-        seedColor = customPrimaryColor,
-        darkTheme = true,
-        amoledDarkTheme = amoledDarkTheme,
-        paletteStyle = colorStyle,
-        colorSpec = colorSpec,
-        dynamicBaseScheme = dynamicDarkBaseScheme
-    )
+    val lightMaterialScheme = if (uiPreset == UiPreset.IOS) {
+        rememberIosColorScheme(
+            seedColor = customPrimaryColor,
+            darkTheme = false,
+            amoledDarkTheme = false,
+            dynamicAccentScheme = dynamicLightBaseScheme
+        )
+    } else {
+        rememberKernelSuStyleColorScheme(
+            seedColor = customPrimaryColor,
+            darkTheme = false,
+            amoledDarkTheme = false,
+            paletteStyle = colorStyle,
+            colorSpec = colorSpec,
+            dynamicBaseScheme = dynamicLightBaseScheme
+        )
+    }
+    val darkMaterialScheme = if (uiPreset == UiPreset.IOS) {
+        rememberIosColorScheme(
+            seedColor = customPrimaryColor,
+            darkTheme = true,
+            amoledDarkTheme = amoledDarkTheme,
+            dynamicAccentScheme = dynamicDarkBaseScheme
+        )
+    } else {
+        rememberKernelSuStyleColorScheme(
+            seedColor = customPrimaryColor,
+            darkTheme = true,
+            amoledDarkTheme = amoledDarkTheme,
+            paletteStyle = colorStyle,
+            colorSpec = colorSpec,
+            dynamicBaseScheme = dynamicDarkBaseScheme
+        )
+    }
 
     val resolvedLightMaterialScheme = remember(lightMaterialScheme, themeRoleOverrides) {
         applyThemeRoleOverrides(lightMaterialScheme, themeRoleOverrides, darkTheme = false)

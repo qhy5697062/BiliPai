@@ -33,13 +33,16 @@ object AppSurfaceTokens {
 
     fun resolveGroupedListContainer(
         colorScheme: ColorScheme,
-        @Suppress("UNUSED_PARAMETER") uiPreset: UiPreset,
+        uiPreset: UiPreset,
         @Suppress("UNUSED_PARAMETER") androidNativeVariant: AndroidNativeVariant
-    ): Color = colorScheme.background
+    ): Color = when (uiPreset) {
+        UiPreset.IOS -> colorScheme.background
+        UiPreset.MD3 -> colorScheme.background
+    }
 
     fun resolveChromeBackground(
         colorScheme: ColorScheme,
-        @Suppress("UNUSED_PARAMETER") uiPreset: UiPreset,
+        uiPreset: UiPreset,
         @Suppress("UNUSED_PARAMETER") androidNativeVariant: AndroidNativeVariant
     ): Color = colorScheme.background
 

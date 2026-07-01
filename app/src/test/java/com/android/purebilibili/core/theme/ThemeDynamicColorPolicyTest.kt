@@ -12,6 +12,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
+import com.android.purebilibili.core.theme.iOSSystemGray6
 
 class ThemeDynamicColorPolicyTest {
 
@@ -251,5 +252,85 @@ class ThemeDynamicColorPolicyTest {
 
         assertEquals(selectedThemeColor, scheme.primary)
         assertTrue(calculateContrastRatio(scheme.onPrimary, scheme.primary) >= 4.5f)
+    }
+
+    @Test
+    fun `ios light scheme keeps grouped list gray background and white cards`() {
+        val scheme = createIosColorScheme(
+            primaryColor = Color(0xFF007AFF),
+            darkTheme = false,
+            amoledDarkTheme = false
+        )
+
+        assertEquals(iOSSystemGray6, scheme.background)
+        assertEquals(Color.White, scheme.surface)
+        assertEquals(Color(0xFF007AFF), scheme.primary)
+    }
+
+    @Test
+    fun `ios dark scheme keeps ios neutral surfaces instead of md3 tinted neutrals`() {
+        val iosScheme = createIosColorScheme(
+            primaryColor = Color(0xFF34C759),
+            darkTheme = true,
+            amoledDarkTheme = false
+        )
+        val md3Scheme = createStaticMd3ColorScheme(
+            primaryColor = Color(0xFF34C759),
+            darkTheme = true,
+            amoledDarkTheme = false
+        )
+
+        assertNotEquals(md3Scheme.background, iosScheme.background)
+        assertNotEquals(md3Scheme.surface, iosScheme.surface)
+        assertEquals(Color(0xFF34C759), iosScheme.primary)
+    }
+
+    @Test
+    fun `ios dynamic accent merge keeps ios surfaces while adopting monet accents`() {
+        val base = createIosColorScheme(
+            primaryColor = Color(0xFF007AFF),
+            darkTheme = false,
+            amoledDarkTheme = false
+        )
+        val dynamicAccent = lightColorScheme(
+            primary = Color(0xFF6750A4),
+            onPrimary = Color.White,
+            primaryContainer = Color(0xFFEADDFF),
+            onPrimaryContainer = Color(0xFF21005D),
+            secondary = Color(0xFF625B71),
+            onSecondary = Color.White,
+            secondaryContainer = Color(0xFFE8DEF8),
+            onSecondaryContainer = Color(0xFF1D192B),
+            tertiary = Color(0xFF7D5260),
+            onTertiary = Color.White,
+            tertiaryContainer = Color(0xFFFFD8E4),
+            onTertiaryContainer = Color(0xFF31111D),
+            background = Color(0xFFFFFBFE),
+            surface = Color(0xFFFFFBFE)
+        )
+
+        val merged = alignIosColorSchemeWithDynamicAccent(
+            baseScheme = base,
+            dynamicAccentScheme = dynamicAccent
+        )
+
+        assertEquals(base.background, merged.background)
+        assertEquals(base.surface, merged.surface)
+        assertEquals(dynamicAccent.primary, merged.primary)
+        assertEquals(dynamicAccent.secondary, merged.secondary)
+        assertEquals(dynamicAccent.tertiary, merged.tertiary)
+    }
+
+    @Test
+    fun `ios amoled scheme forces black surfaces`() {
+        val scheme = createIosColorScheme(
+            primaryColor = Color(0xFF007AFF),
+            darkTheme = true,
+            amoledDarkTheme = true
+        )
+
+        assertEquals(Color.Black, scheme.background)
+        assertEquals(Color.Black, scheme.surface)
+        assertEquals(Color(0xFF007AFF), scheme.primary)
     }
 }
