@@ -35,7 +35,7 @@ internal data class NativeVideoCardTransitionFrame(
 )
 
 internal const val NATIVE_VIDEO_CARD_TRANSITION_DURATION_MILLIS = 420L
-internal const val NATIVE_VIDEO_CARD_TRANSITION_MAX_BLUR_RADIUS_PX = 24f
+internal const val NATIVE_VIDEO_CARD_TRANSITION_MAX_BLUR_RADIUS_PX = 36f
 private const val NATIVE_VIDEO_CARD_TRANSITION_BLUR_QUANTUM_PX = 2f
 private const val NATIVE_VIDEO_CARD_TRANSITION_MAX_SCRIM_ALPHA = 0.34f
 
@@ -77,14 +77,10 @@ private fun resolveNativeVideoCardTransitionEffectStrength(
     progress: Float,
     phase: NativeVideoCardTransitionPhase
 ): Float {
-    val easedProgress = smoothStep(progress.coerceIn(0f, 1f))
+    val clamped = progress.coerceIn(0f, 1f)
     return when (phase) {
-        NativeVideoCardTransitionPhase.Closing -> 1f - easedProgress
+        NativeVideoCardTransitionPhase.Closing -> (1f - clamped * clamped)
     }
-}
-
-private fun smoothStep(progress: Float): Float {
-    return progress * progress * (3f - 2f * progress)
 }
 
 private fun quantizeNativeVideoCardTransitionBlurRadius(radiusPx: Float): Float {

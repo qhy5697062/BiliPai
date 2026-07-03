@@ -8,16 +8,16 @@ import kotlin.test.assertTrue
 class VideoCardTransitionBackgroundPolicyTest {
 
     @Test
-    fun api35OpeningFrameUsesLowerQuantizedBlurAndScrim() {
+    fun api35OpeningFrameUsesOriginalBlurStrengthAndScrim() {
         val frame = resolveVideoCardTransitionBackgroundFrame(
             progress = 1f,
             phase = VideoCardTransitionBackgroundPhase.OPENING,
             sdkInt = 35
         )
 
-        assertEquals(24f, frame.blurRadiusPx)
+        assertEquals(36f, frame.blurRadiusPx)
         assertEquals(0f, frame.blurRadiusPx % 2f)
-        assertEquals(0.20f, frame.scrimAlpha)
+        assertEquals(0.22f, frame.scrimAlpha)
         assertTrue(frame.contentScale < 1f)
     }
 
@@ -41,6 +41,7 @@ class VideoCardTransitionBackgroundPolicyTest {
 
         assertTrue(start.blurRadiusPx > middle.blurRadiusPx)
         assertTrue(middle.blurRadiusPx > end.blurRadiusPx)
+        assertEquals(28f, middle.blurRadiusPx)
         assertEquals(0f, start.scrimAlpha)
         assertEquals(0f, middle.scrimAlpha)
         assertEquals(1f, start.contentScale)
@@ -68,14 +69,14 @@ class VideoCardTransitionBackgroundPolicyTest {
     }
 
     @Test
-    fun returningTailClearsBlurEarly() {
+    fun lowProgressKeepsBlurVisibleUntilTransitionEnds() {
         val frame = resolveVideoCardTransitionBackgroundFrame(
-            progress = 0.16f,
+            progress = 0.25f,
             phase = VideoCardTransitionBackgroundPhase.RETURNING,
             sdkInt = 35
         )
 
-        assertEquals(0f, frame.blurRadiusPx)
+        assertEquals(16f, frame.blurRadiusPx)
         assertEquals(0f, frame.scrimAlpha)
         assertEquals(1f, frame.contentScale)
     }

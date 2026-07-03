@@ -31,6 +31,8 @@ class NativeVideoCardTransitionPolicyTest {
 
         assertTrue(start.blurRadiusPx > middle.blurRadiusPx)
         assertTrue(middle.blurRadiusPx > end.blurRadiusPx)
+        assertEquals(28f, start.blurRadiusPx)
+        assertEquals(22f, middle.blurRadiusPx)
         assertEquals(0f, start.scrimAlpha)
         assertEquals(0f, middle.scrimAlpha)
         assertEquals(0f, end.scrimAlpha)
@@ -47,6 +49,7 @@ class NativeVideoCardTransitionPolicyTest {
 
         assertTrue(middle.blurRadiusPx > 0f)
         assertEquals(0f, middle.blurRadiusPx % 2f)
+        assertEquals(22f, middle.blurRadiusPx)
         assertEquals(0f, middle.scrimAlpha)
     }
 
@@ -64,7 +67,7 @@ class NativeVideoCardTransitionPolicyTest {
     }
 
     @Test
-    fun defaultMaxBlurIsCappedToTwentyFourPixels() {
+    fun defaultMaxBlurUsesOriginalThirtySixPixels() {
         val start = resolveNativeVideoCardTransitionFrame(
             spec = NativeVideoCardTransitionSpec(
                 maxBlurRadiusPx = NATIVE_VIDEO_CARD_TRANSITION_MAX_BLUR_RADIUS_PX
@@ -74,7 +77,7 @@ class NativeVideoCardTransitionPolicyTest {
             sdkInt = 35
         )
 
-        assertEquals(24f, start.blurRadiusPx)
+        assertEquals(36f, start.blurRadiusPx)
         assertEquals(0f, start.scrimAlpha)
     }
 }

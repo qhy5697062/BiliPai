@@ -11,11 +11,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import com.android.purebilibili.navigation.isVideoCardReturnTargetRoute
 import kotlin.math.roundToInt
 
-private const val VIDEO_CARD_TRANSITION_MAX_BLUR_RADIUS_PX = 24f
+private const val VIDEO_CARD_TRANSITION_MAX_BLUR_RADIUS_PX = 36f
 private const val VIDEO_CARD_TRANSITION_BLUR_QUANTUM_PX = 2f
-private const val VIDEO_CARD_TRANSITION_MAX_SCRIM_ALPHA = 0.20f
+private const val VIDEO_CARD_TRANSITION_MAX_SCRIM_ALPHA = 0.22f
 private const val VIDEO_CARD_TRANSITION_MAX_CONTENT_SCALE_REDUCTION = 0.045f
-private const val VIDEO_CARD_TRANSITION_BLUR_CLEAR_TAIL_PROGRESS = 0.18f
 
 internal const val VIDEO_CARD_TRANSITION_BACKGROUND_FORWARD_DURATION_MS = 160
 internal const val VIDEO_CARD_TRANSITION_BACKGROUND_RETURN_DURATION_MS = 180
@@ -39,9 +38,7 @@ internal fun resolveVideoCardTransitionBackgroundFrame(
     sdkInt: Int = Build.VERSION.SDK_INT
 ): VideoCardTransitionBackgroundFrame {
     val clamped = progress.coerceIn(0f, 1f)
-    val blurProgress = ((clamped - VIDEO_CARD_TRANSITION_BLUR_CLEAR_TAIL_PROGRESS) /
-        (1f - VIDEO_CARD_TRANSITION_BLUR_CLEAR_TAIL_PROGRESS)).coerceIn(0f, 1f)
-    val blurStrength = smoothVideoCardTransitionBackgroundProgress(blurProgress)
+    val blurStrength = resolveVideoCardTransitionBlurStrength(clamped)
     val rawBlurRadiusPx = if (sdkInt >= Build.VERSION_CODES.S) {
         VIDEO_CARD_TRANSITION_MAX_BLUR_RADIUS_PX * blurStrength
     } else {
@@ -112,9 +109,10 @@ internal fun Modifier.videoCardTransitionBackgroundEffect(
     }
 }
 
-private fun smoothVideoCardTransitionBackgroundProgress(progress: Float): Float {
+private fun resolveVideoCardTransitionBlurStrength(progress: Float): Float {
     val clamped = progress.coerceIn(0f, 1f)
-    return clamped * clamped * (3f - 2f * clamped)
+    // 模糊要比位移/缩放更早进入可感知区，否则 160ms 内肉眼很难看出背景虚化。
+    return 1f - (1f - clamped) * (1f - clamped)
 }
 
 private fun quantizeVideoCardTransitionBlurRadius(radiusPx: Float): Float {
