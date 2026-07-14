@@ -182,8 +182,11 @@ internal fun biliPaiNavEntryMetadata(
             fromRoute = initialState.biliPaiRouteBase(),
             toRoute = targetState.biliPaiRouteBase(),
             cardTransitionEnabled = cardTransitionEnabled,
-            sharedElementPopReady = key is BiliPaiNavKey.SeasonSeriesDetail &&
-                key.sharedElementTransition,
+            sharedElementPopReady = (key is BiliPaiNavKey.SeasonSeriesDetail &&
+                key.sharedElementTransition) || isRelatedVideoDetailReturn(
+                fromKey = key as? BiliPaiNavKey.VideoDetail,
+                toKey = targetState.biliPaiTopKey(),
+            ),
             sourceMetadata = sourceMetadata,
             activeMainHostRoute = activeMainHostRoute
         )
@@ -307,6 +310,10 @@ private fun androidx.navigation3.scene.Scene<*>.biliPaiRouteBase(): String? {
         ?.get(BILI_PAI_NAV_ROUTE_BASE_METADATA_KEY) as? String
 }
 
+private fun androidx.navigation3.scene.Scene<*>.biliPaiTopKey(): BiliPaiNavKey? {
+    return entries.lastOrNull()?.contentKey as? BiliPaiNavKey
+}
+
 internal data class BiliPaiNavEntryRouteTransitions(
     val forward: BiliPaiNavRouteTransition,
     val pop: BiliPaiNavRouteTransition,
@@ -329,9 +336,9 @@ internal fun resolveBiliPaiNavEntryRouteTransitions(
         sourceMetadata.sharedTransitionReady
     val sharedReadyFavoriteCollection =
         key is BiliPaiNavKey.SeasonSeriesDetail && key.sharedElementTransition
+    val relatedVideoDetail = key is BiliPaiNavKey.VideoDetail &&
+        key.sourceRoute?.substringBefore("?")?.startsWith("video/") == true
     val forward = when {
-        cardTransitionEnabled && isRelatedVideoDetailEntry(key, sourceMetadata) ->
-            BiliPaiNavRouteTransition.FALLBACK
         cardTransitionEnabled && sharedReadyFavoriteCollection ->
             BiliPaiNavRouteTransition.NO_OP_SHARED_ELEMENT
         cardTransitionEnabled && sharedReadyVideoPush -> BiliPaiNavRouteTransition.NO_OP_SHARED_ELEMENT
@@ -340,7 +347,7 @@ internal fun resolveBiliPaiNavEntryRouteTransitions(
                 ?: BiliPaiNavRouteTransition.FALLBACK
         else -> BiliPaiNavRouteTransition.FALLBACK
     }
-    val pop = if (cardTransitionEnabled && sharedReadyFavoriteCollection) {
+    val pop = if (cardTransitionEnabled && (sharedReadyFavoriteCollection || relatedVideoDetail)) {
         BiliPaiNavRouteTransition.NO_OP_SHARED_ELEMENT
     } else {
         BiliPaiNavRouteTransition.FALLBACK

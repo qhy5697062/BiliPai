@@ -58,7 +58,7 @@ class RelatedVideoItemPolicyTest {
     }
 
     @Test
-    fun `related detail transition shares the cover instead of the whole card shell`() {
+    fun `related detail transition shares the whole card shell`() {
         val source = File("src/main/java/com/android/purebilibili/feature/video/ui/components/RelatedVideoItem.kt")
             .readText()
         val surfaceBlock = source
@@ -67,8 +67,7 @@ class RelatedVideoItemPolicyTest {
 
         assertTrue(source.contains("videoCardShellSharedBoundsOrEmpty("))
         assertTrue(surfaceBlock.contains("videoCardShellSharedBoundsOrEmpty("))
-        assertTrue(source.contains("videoCoverSharedElementKey("))
-        assertTrue(source.contains("relatedCoverSharedBoundsModifier"))
+        assertTrue(source.contains("!useCardShellSharedBounds"))
     }
 
     @Test

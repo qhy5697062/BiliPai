@@ -140,7 +140,7 @@ class BiliPaiNavMotionPolicyTest {
     }
 
     @Test
-    fun navDisplayPop_relatedDetailReturnUsesNavigationDefault() {
+    fun navDisplayPop_relatedDetailReturnUsesStackOwnedSharedElementSource() {
         val transition = resolveBiliPaiNavDisplayPopRouteTransition(
             cardTransitionEnabled = true,
             sourceMetadata = BiliPaiNavSourceMetadata(
@@ -152,7 +152,35 @@ class BiliPaiNavMotionPolicyTest {
             toKey = BiliPaiNavKey.VideoDetail("BV_A")
         )
 
-        assertEquals(BiliPaiNavRouteTransition.FALLBACK, transition)
+        assertEquals(BiliPaiNavRouteTransition.NO_OP_SHARED_ELEMENT, transition)
+    }
+
+    @Test
+    fun relatedDetailReturnDoesNotDependOnLastClickedGlobalMetadata() {
+        val transition = resolveBiliPaiNavDisplayPopRouteTransition(
+            cardTransitionEnabled = true,
+            sourceMetadata = BiliPaiNavSourceMetadata(
+                sourceKey = "video/BV_B:BV_C",
+                sourceRoute = "video/BV_B",
+                clickedBoundsRecorded = true
+            ),
+            fromKey = BiliPaiNavKey.VideoDetail("BV_B", sourceRoute = "video/BV_A"),
+            toKey = BiliPaiNavKey.VideoDetail("BV_A")
+        )
+
+        assertEquals(BiliPaiNavRouteTransition.NO_OP_SHARED_ELEMENT, transition)
+    }
+
+    @Test
+    fun relatedDetailReturnWithMismatchedParentFallsBack() {
+        val transition = resolveBiliPaiNavDisplayPopRouteTransition(
+            cardTransitionEnabled = true,
+            sourceMetadata = BiliPaiNavSourceMetadata(),
+            fromKey = BiliPaiNavKey.VideoDetail("BV_B", sourceRoute = "video/BV_X"),
+            toKey = BiliPaiNavKey.VideoDetail("BV_A")
+        )
+
+        assertEquals(BiliPaiNavRouteTransition.CLASSIC_CARD, transition)
     }
 
     @Test

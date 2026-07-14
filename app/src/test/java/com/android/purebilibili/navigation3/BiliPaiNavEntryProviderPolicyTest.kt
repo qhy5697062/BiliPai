@@ -95,7 +95,7 @@ class BiliPaiNavEntryProviderPolicyTest {
     }
 
     @Test
-    fun relatedVideoDetailUsesNavigationDefaultsForForwardPopAndPredictivePop() {
+    fun relatedVideoDetailUsesSharedElementRouteForForwardPopAndPredictivePop() {
         val transitions = resolveBiliPaiNavEntryRouteTransitions(
             key = BiliPaiNavKey.VideoDetail(bvid = "BV_B", sourceRoute = "video/BV_A"),
             cardTransitionEnabled = true,
@@ -106,9 +106,22 @@ class BiliPaiNavEntryProviderPolicyTest {
             )
         )
 
+        assertEquals(BiliPaiNavRouteTransition.NO_OP_SHARED_ELEMENT, transitions.forward)
+        assertEquals(BiliPaiNavRouteTransition.NO_OP_SHARED_ELEMENT, transitions.pop)
+        assertEquals(BiliPaiNavRouteTransition.NO_OP_SHARED_ELEMENT, transitions.predictivePop)
+    }
+
+    @Test
+    fun relatedVideoDetailWithoutRecordedSourceFallsBackOnForward() {
+        val transitions = resolveBiliPaiNavEntryRouteTransitions(
+            key = BiliPaiNavKey.VideoDetail(bvid = "BV_B", sourceRoute = "video/BV_A"),
+            cardTransitionEnabled = true,
+            sourceMetadata = BiliPaiNavSourceMetadata()
+        )
+
         assertEquals(BiliPaiNavRouteTransition.FALLBACK, transitions.forward)
-        assertEquals(BiliPaiNavRouteTransition.FALLBACK, transitions.pop)
-        assertEquals(BiliPaiNavRouteTransition.FALLBACK, transitions.predictivePop)
+        assertEquals(BiliPaiNavRouteTransition.NO_OP_SHARED_ELEMENT, transitions.pop)
+        assertEquals(BiliPaiNavRouteTransition.NO_OP_SHARED_ELEMENT, transitions.predictivePop)
     }
 
     @Test

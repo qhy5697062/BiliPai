@@ -130,8 +130,8 @@ internal fun resolveBiliPaiNavDisplayPopRouteTransition(
     val fromVideoKey = fromKey as? BiliPaiNavKey.VideoDetail
     val toIsCardReturnTarget = toKey != null && isCardReturnTargetNavKey(toKey)
     if (cardTransitionEnabled) {
-        if (isRelatedVideoDetailReturn(fromVideoKey, toKey, sourceMetadata)) {
-            return BiliPaiNavRouteTransition.FALLBACK
+        if (isRelatedVideoDetailReturn(fromVideoKey, toKey)) {
+            return BiliPaiNavRouteTransition.NO_OP_SHARED_ELEMENT
         }
         val sharedReadyFavoriteCollectionReturn =
             fromKey is BiliPaiNavKey.SeasonSeriesDetail &&
@@ -174,16 +174,12 @@ internal fun isRelatedVideoDetailEntry(
         sourceMetadata.sourceKey == "$sourceRoute:${videoKey.bvid}"
 }
 
-private fun isRelatedVideoDetailReturn(
+internal fun isRelatedVideoDetailReturn(
     fromKey: BiliPaiNavKey.VideoDetail?,
-    toKey: BiliPaiNavKey?,
-    sourceMetadata: BiliPaiNavSourceMetadata
+    toKey: BiliPaiNavKey?
 ): Boolean {
     val targetKey = toKey as? BiliPaiNavKey.VideoDetail ?: return false
-    val sourceRoute = sourceMetadata.sourceRoute?.substringBefore("?") ?: return false
-    return sourceRoute == "video/${targetKey.bvid}" &&
-        fromKey?.sourceRoute?.substringBefore("?") == sourceRoute &&
-        sourceMetadata.sourceKey == "$sourceRoute:${fromKey.bvid}"
+    return fromKey?.sourceRoute?.substringBefore("?") == "video/${targetKey.bvid}"
 }
 
 internal fun shouldInterceptSystemBackForNavigation3(
