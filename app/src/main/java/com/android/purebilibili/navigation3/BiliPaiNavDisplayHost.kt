@@ -201,8 +201,6 @@ internal fun BiliPaiNavDisplayHost(
             }
         }
     }
-    val currentBackKey = safeBackStack.lastOrNull()
-    val targetBackKey = safeBackStack.getOrNull(safeBackStack.lastIndex - 1)
     val popRouteTransition = remember(cardTransitionEnabled, sourceMetadata, safeBackStack) {
         resolveBiliPaiNavDisplayPopRouteTransition(
             cardTransitionEnabled = cardTransitionEnabled,
@@ -228,21 +226,19 @@ internal fun BiliPaiNavDisplayHost(
     }
     val predictiveBackHandler: BiliPaiPredictiveBackAnimationHandler = remember(
         popRouteTransition,
-        targetBackKey,
-        cardTransitionEnabled,
         predictiveBackEnabled,
         predictiveBackAnimationStyle,
         predictiveBackExitDirection,
     ) {
         resolveBiliPaiPredictiveBackAnimationHandler(
             routeTransition = popRouteTransition,
-            targetBackKey = targetBackKey,
-            cardTransitionEnabled = cardTransitionEnabled,
             predictiveBackEnabled = predictiveBackEnabled,
             style = predictiveBackAnimationStyle,
             exitDirection = predictiveBackExitDirection,
         )
     }
+    val currentBackKey = safeBackStack.lastOrNull()
+    val targetBackKey = safeBackStack.getOrNull(safeBackStack.lastIndex - 1)
     val gestureReturningVideoCard = predictiveBackEnabled &&
         cardTransitionEnabled &&
         isVideoCardTransitionBackgroundGesturePhase(videoCardTransitionBackgroundPhase) &&

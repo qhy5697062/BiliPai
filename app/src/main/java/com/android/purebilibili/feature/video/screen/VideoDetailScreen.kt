@@ -303,9 +303,11 @@ internal fun shouldUseReturningVideoDetailVisualState(
 internal fun shouldTreatVideoDetailCardExitAsReturning(
     isExitTransitionInProgress: Boolean,
     sharedBoundsActive: Boolean,
+    keepLoadedContentForBackPreview: Boolean = false,
 ): Boolean {
     return isExitTransitionInProgress &&
-        sharedBoundsActive
+        sharedBoundsActive &&
+        !keepLoadedContentForBackPreview
 }
 
 internal fun resolveCoverTakeoverDelayBeforeBackNavigationMillis(): Long {
@@ -1105,6 +1107,7 @@ fun VideoDetailScreen(
     openCommentRootRpidFromRoute: Long = 0L,
     openCommentTargetRpidFromRoute: Long = 0L,
     sourceRouteForSharedElement: String? = null,
+    keepLoadedContentForBackPreview: Boolean = false,
     isReturningFromDetail: Boolean = false,
     isQuickReturningFromDetail: Boolean = false,
     onMarkReturningFromDetail: () -> Unit = {},
@@ -1792,12 +1795,12 @@ fun VideoDetailScreen(
     val coverTakeoverBeforeBackDelayMillis = remember {
         resolveCoverTakeoverDelayBeforeBackNavigationMillis()
     }
-    // 预测式返回手势拖动期间(video → card)：本页 AnimatedContent 进入 PostExit(isExitTransitionInProgress)
-    // 且存在共享元素配对(sharedBoundsActive)时，提前让封面接管，避免提交返回瞬间 player→cover 硬切闪烁。
-    // 仅在有卡片可落位(sharedBoundsActive)时启用，普通退出/无共享元素场景保持原行为。
+    // 仅当详情页自身正在回收到来源卡片时让封面接管。详情页作为上层页面的
+    // 直接返回目标时必须保留已加载的播放器与内容，避免预测返回预览变成封面占位。
     val isCardReturnExitInProgress = shouldTreatVideoDetailCardExitAsReturning(
         isExitTransitionInProgress = isExitTransitionInProgress,
         sharedBoundsActive = sharedBoundsActive,
+        keepLoadedContentForBackPreview = keepLoadedContentForBackPreview,
     )
     val forceCoverOnlyForReturn = resolveForceCoverOnlyForReturn(
         forceCoverOnlyOnReturn = forceCoverOnlyOnReturn,

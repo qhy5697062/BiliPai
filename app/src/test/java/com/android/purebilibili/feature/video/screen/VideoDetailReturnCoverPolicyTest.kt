@@ -25,6 +25,17 @@ class VideoDetailReturnCoverPolicyTest {
     }
 
     @Test
+    fun `detail used as immediate back target keeps its loaded player and controls`() {
+        assertFalse(
+            shouldTreatVideoDetailCardExitAsReturning(
+                isExitTransitionInProgress = true,
+                sharedBoundsActive = true,
+                keepLoadedContentForBackPreview = true,
+            )
+        )
+    }
+
+    @Test
     fun `detail route does not manually fade its background during return`() {
         val source = File("src/main/java/com/android/purebilibili/feature/video/screen/VideoDetailScreen.kt")
             .readText()

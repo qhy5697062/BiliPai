@@ -87,6 +87,20 @@ class AppNavigationNavigation3BridgeStructureTest {
     }
 
     @Test
+    fun immediateVideoDetailBackTargetKeepsLoadedPreviewContent() {
+        val videoDetailBranch = appNavigationSource()
+            .substringAfter("BiliPaiNavEntryContentRole.VIDEO_DETAIL ->")
+            .substringBefore("BiliPaiNavEntryContentRole.ARTICLE_DETAIL ->")
+
+        assertTrue(videoDetailBranch.contains("keepLoadedContentForBackPreview ="))
+        assertTrue(
+            videoDetailBranch.contains(
+                "navigation3BackStack.getOrNull(navigation3BackStack.lastIndex - 1) == videoKey"
+            )
+        )
+    }
+
+    @Test
     fun homeVideoUsesComposeCardShellContainerTransformWithoutNativeBackgroundPreview() {
         val source = appNavigationSource()
         val videoDetailBranch = source

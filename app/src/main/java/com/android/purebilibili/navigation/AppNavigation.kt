@@ -1872,6 +1872,8 @@ fun AppNavigation(
                                 openCommentRootRpidFromRoute = videoKey.commentRootRpid,
                                 openCommentTargetRpidFromRoute = videoKey.commentTargetRpid,
                                 sourceRouteForSharedElement = videoKey.sourceRoute,
+                                keepLoadedContentForBackPreview =
+                                    navigation3BackStack.getOrNull(navigation3BackStack.lastIndex - 1) == videoKey,
                                 isReturningFromDetail = navigation3ReturnSession.isReturningFromDetail,
                                 isQuickReturningFromDetail = navigation3ReturnSession.isQuickReturnFromDetail,
                                 onMarkReturningFromDetail = {

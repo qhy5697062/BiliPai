@@ -4,7 +4,6 @@ import com.android.purebilibili.navigation3.predictiveback.BiliPaiDefaultPredict
 import com.android.purebilibili.navigation3.predictiveback.BiliPaiDisabledPredictiveBackAnimation
 import com.android.purebilibili.navigation3.predictiveback.BiliPaiPredictiveBackAnimationStyle
 import com.android.purebilibili.navigation3.predictiveback.BiliPaiSharedElementPredictiveBackAnimation
-import com.android.purebilibili.navigation3.predictiveback.BiliPaiVideoDetailTargetPredictiveBackAnimation
 import com.android.purebilibili.navigation3.predictiveback.resolveBiliPaiPredictiveBackAnimationHandler
 import java.io.File
 import kotlin.test.Test
@@ -32,36 +31,18 @@ class BiliPaiPredictiveBackAnimationPolicyTest {
     }
 
     @Test
-    fun videoDetailTarget_keepsLoadedDetailContentOpaqueDuringPredictiveBack() {
+    fun classicCardRoute_doesNotInstallTargetSpecificPredictiveHandler() {
         val handler = resolveBiliPaiPredictiveBackAnimationHandler(
             routeTransition = BiliPaiNavRouteTransition.CLASSIC_CARD,
-            targetBackKey = BiliPaiNavKey.VideoDetail(bvid = "BV1detail"),
-        )
-
-        assertTrue(handler is BiliPaiVideoDetailTargetPredictiveBackAnimation)
-    }
-
-    @Test
-    fun videoDetailTarget_usesNavigationDefaultWhenCardTransitionsAreDisabled() {
-        val handler = resolveBiliPaiPredictiveBackAnimationHandler(
-            routeTransition = BiliPaiNavRouteTransition.FALLBACK,
-            targetBackKey = BiliPaiNavKey.VideoDetail(bvid = "BV1detail"),
-            cardTransitionEnabled = false,
         )
 
         assertTrue(handler is BiliPaiDefaultPredictiveBackAnimation)
     }
 
     @Test
-    fun videoDetailTarget_doesNotFadeInTheTargetDetailLayer() {
-        val source = listOf(
-            File("app/src/main/java/com/android/purebilibili/navigation3/predictiveback/BiliPaiVideoDetailTargetPredictiveBackAnimation.kt"),
-            File("src/main/java/com/android/purebilibili/navigation3/predictiveback/BiliPaiVideoDetailTargetPredictiveBackAnimation.kt")
-        ).first { it.exists() }.readText()
-
-        assertTrue(source.contains("targetContentEnter = EnterTransition.None"))
-        assertTrue(source.contains("initialContentExit = scaleOut(targetScale = 0.7f)"))
-        assertFalse(source.contains("fadeIn("))
+    fun targetSpecificPredictiveHandler_isNotPresent() {
+        val sourceRoot = listOf(File("app/src/main"), File("src/main")).first { it.exists() }
+        assertFalse(sourceRoot.walkTopDown().any { it.name == "BiliPaiVideoDetailTargetPredictiveBackAnimation.kt" })
     }
 
     @Test
