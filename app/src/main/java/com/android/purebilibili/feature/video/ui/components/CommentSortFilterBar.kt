@@ -18,6 +18,7 @@ import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.core.store.HomeSettings
 import com.android.purebilibili.core.store.SettingsManager
 import com.android.purebilibili.feature.home.components.BottomBarLiquidSegmentedControl
+import com.android.purebilibili.feature.home.components.LIQUID_REUSE_LOCAL_SAMPLING_BLEED_DP
 import com.android.purebilibili.feature.video.viewmodel.CommentSortMode
 import top.yukonga.miuix.kmp.blur.Backdrop
 import androidx.compose.ui.platform.LocalContext
@@ -60,7 +61,8 @@ fun CommentSortFilterBar(
     upOnly: Boolean = false,
     onUpOnlyToggle: () -> Unit = {},
     modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null
+    backdrop: Backdrop? = null,
+    backdropCoversControl: Boolean = false
 ) {
     val sortModes = remember { CommentSortMode.entries.toList() }
     val appearance = rememberVideoCommentAppearance()
@@ -68,7 +70,10 @@ fun CommentSortFilterBar(
     FlowRow(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(
+                start = 16.dp,
+                end = LIQUID_REUSE_LOCAL_SAMPLING_BLEED_DP.dp
+            )
             .padding(top = 6.dp),
         itemVerticalAlignment = Alignment.CenterVertically,
         verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -110,7 +115,8 @@ fun CommentSortFilterBar(
                 onScaleChange = { index ->
                     sortModes.getOrNull(index)?.let(onSortModeChange)
                 },
-                backdrop = backdrop
+                backdrop = backdrop,
+                backdropCoversControl = backdropCoversControl
             )
         }
     }
@@ -124,7 +130,8 @@ fun iOSSegmentedControl(
     items: List<String>,
     selectedIndex: Int,
     onScaleChange: (Int) -> Unit,
-    backdrop: Backdrop? = null
+    backdrop: Backdrop? = null,
+    backdropCoversControl: Boolean = false
 ) {
     val context = LocalContext.current
     val homeSettings by SettingsManager
@@ -142,6 +149,7 @@ fun iOSSegmentedControl(
         indicatorHeight = spec.indicatorHeightDp.dp,
         labelFontSize = 13.sp,
         backdrop = backdrop,
+        backdropCoversControl = backdropCoversControl,
         forceLiquidChrome = homeSettings.androidNativeLiquidGlassEnabled,
         liquidGlassEffectsEnabled = backdrop != null,
         tapPressRefractionEnabled = false

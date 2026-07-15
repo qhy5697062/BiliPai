@@ -979,7 +979,8 @@ private fun VideoCommentTab(
             onSortModeChange = onSortModeChange,
             upOnly = upOnlyFilter,
             onUpOnlyToggle = onUpOnlyToggle,
-            backdrop = chromeBackdrop
+            backdrop = chromeBackdrop,
+            backdropCoversControl = chromeBackdrop != null
         )
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             LazyColumn(

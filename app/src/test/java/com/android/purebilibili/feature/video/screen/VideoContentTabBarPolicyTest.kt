@@ -117,6 +117,7 @@ class VideoContentTabBarPolicyTest {
         val commentTabSource = source.substringAfter("private fun VideoCommentTab(")
             .substringBefore("private fun VideoHeaderContent(")
         assertTrue(commentTabSource.contains("CommentSortFilterBar("))
+        assertTrue(commentTabSource.contains("backdropCoversControl = chromeBackdrop != null"))
         assertFalse(commentTabSource.contains("item {\n                CommentSortFilterBar("))
         val pagerBlock = source
             .substringAfter("HorizontalPager(")
