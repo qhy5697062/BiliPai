@@ -171,11 +171,14 @@ internal fun resolveVideoCardSharedTransitionReturnEasing(): Easing =
     resolveVideoCardSharedTransitionSpatialEasing()
 
 /**
- * 仅用于卡片景深背景的返回清晰动画（blur/scale/scrim → 0）。
- * 与 Hero 共享元素的 Continuity / soft spring 分开，避免把空间位移动画也改成 ease-in。
+ * 卡片景深返回清晰曲线。
+ *
+ * **必须与 sharedBounds 返回 morph 一致用 Linear**：
+ * morph 已是 Linear tween（可 seek / remainingDuration 可算），景深若用 SoftClear
+ * 会在卡片将落位时仍「挂糊」，观感上模糊层和壳不同步。
  */
 internal fun resolveVideoCardTransitionBackgroundReturnClearEasing(): Easing =
-    AppMotionEasing.SoftClear
+    LinearEasing
 
 internal fun resolveVideoCardSharedTransitionSpatialEasing(): Easing = AppMotionEasing.Continuity
 

@@ -113,7 +113,8 @@ class BiliPaiNavDisplayHostStructureTest {
         assertFalse(openingBranch.substringAfter("targetValue = 1f").contains("VideoCardTransitionBackgroundPhase.IDLE"))
         assertTrue(returnBranch.contains("VideoCardTransitionBackgroundPhase.RETURNING"))
         assertTrue(returnBranch.contains("videoCardTransitionBackgroundProgress.snapTo(1f)"))
-        assertTrue(returnBranch.contains("resolveVideoCardTransitionBackgroundReturnDurationMs"))
+        // 消糊与 morph 墙钟锁步，不再走带 min 160 地板的旧 returnDuration API。
+        assertTrue(returnBranch.contains("resolveMorphAlignedDepthClearDurationMs"))
         assertTrue(returnBranch.contains("resolveVideoCardTransitionBackgroundReturnClearEasing()"))
         assertTrue(returnBranch.contains("remainingBlur"))
         assertTrue(returnBranch.contains("videoCardTransitionBackgroundProgress.animateTo("))
@@ -231,6 +232,7 @@ class BiliPaiNavDisplayHostStructureTest {
         assertTrue(preOnBack.contains("VideoCardTransitionBackgroundPhase.OPENING"))
         assertTrue(preOnBack.contains("VideoCardTransitionBackgroundPhase.RETURNING"))
         assertTrue(preOnBack.contains("resolveVideoCardTransitionBackgroundReturnClearEasing()"))
+        assertTrue(preOnBack.contains("resolveMorphAlignedDepthClearDurationMs"))
         assertTrue(preOnBack.contains("shouldSnapClearVideoCardDepthBlurOnQuickReturn("))
         assertTrue(preOnBack.contains("videoCardTransitionBackgroundProgress.snapTo(0f)"))
     }

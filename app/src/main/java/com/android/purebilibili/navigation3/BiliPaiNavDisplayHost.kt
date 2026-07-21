@@ -58,7 +58,7 @@ import com.android.purebilibili.core.ui.transition.VideoCardTransitionBackground
 import com.android.purebilibili.core.ui.transition.resolvePredictiveBackCommitBlurDurationMs
 import com.android.purebilibili.core.ui.transition.resolvePredictiveBackGestureBlurProgress
 import com.android.purebilibili.core.ui.transition.resolveVideoCardTransitionBackgroundGestureBlurProgress
-import com.android.purebilibili.core.ui.transition.resolveVideoCardTransitionBackgroundReturnDurationMs
+import com.android.purebilibili.core.ui.transition.resolveMorphAlignedDepthClearDurationMs
 import com.android.purebilibili.core.ui.transition.resolveVideoCardTransitionReturnFullDurationMillis
 import com.android.purebilibili.core.ui.transition.resolveVideoCardSharedMorphRemainingDurationMs
 import com.android.purebilibili.core.ui.transition.resolveVideoCardSharedTransitionEnterEasing
@@ -254,10 +254,8 @@ internal fun BiliPaiNavDisplayHost(
                 videoCardTransitionSourceRoute = openingSourceRoute
                 videoCardTransitionBackgroundPhase = VideoCardTransitionBackgroundPhase.OPENING
                 videoCardTransitionBackgroundProgress.snapTo(0f)
-                // 进场动画跑在独立 Job：返回/打断时可 cancel，禁止补完后强行 HELD。
+                // 进场与 morph 同帧起跑（优先视觉）；record 只做一次冻结，不每帧重录。
                 launchVideoCardDepthAnimation {
-                    // 让 sharedBounds 先占首帧，再拉景深，降低点击当帧卡顿。
-                    withFrameNanos { }
                     videoCardTransitionBackgroundProgress.animateTo(
                         targetValue = 1f,
                         animationSpec = tween(
@@ -302,22 +300,27 @@ internal fun BiliPaiNavDisplayHost(
                         val fullDurationMs = resolveVideoCardTransitionReturnFullDurationMillis(
                             baseDurationMillis = videoSharedTransitionDurationMillis,
                         )
-                        // 与 shared morph 满时长契约对齐（无手势 fraction 时 seek=0 → 全长）
+                        // 与 shared morph 满时长锁步（seek=0 → 全长；消糊不设 min 160 地板）
                         val morphAlignedFullMs = resolveVideoCardSharedMorphRemainingDurationMs(
                             seekFraction = 0f,
                             fullDurationMs = fullDurationMs,
                         )
+                        val clearDurationMs = resolveMorphAlignedDepthClearDurationMs(
+                            morphRemainingMs = morphAlignedFullMs,
+                            blurStartProgress = remainingBlur,
+                        )
                         launchVideoCardDepthAnimation {
-                            videoCardTransitionBackgroundProgress.animateTo(
-                                targetValue = 0f,
-                                animationSpec = tween(
-                                    durationMillis = resolveVideoCardTransitionBackgroundReturnDurationMs(
-                                        startProgress = remainingBlur,
-                                        fullDurationMs = morphAlignedFullMs,
+                            if (clearDurationMs <= 0 || remainingBlur <= 0.001f) {
+                                videoCardTransitionBackgroundProgress.snapTo(0f)
+                            } else {
+                                videoCardTransitionBackgroundProgress.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = tween(
+                                        durationMillis = clearDurationMs,
+                                        easing = resolveVideoCardTransitionBackgroundReturnClearEasing(),
                                     ),
-                                    easing = resolveVideoCardTransitionBackgroundReturnClearEasing(),
-                                ),
-                            )
+                                )
+                            }
                             val parentSourceRoute =
                                 resolveCardMorphDestinationSourceRoute(currentTop)
                             if (isVideoCardReturnTargetRoute(parentSourceRoute)) {
@@ -491,17 +494,24 @@ internal fun BiliPaiNavDisplayHost(
                     val morphRemainingMs = resolveVideoCardSharedMorphRemainingDurationMs(
                         seekFraction = gestureFractionAtCommit ?: 0f,
                         fullDurationMs = fullDurationMs,
-                    ).coerceAtLeast(VIDEO_CARD_TRANSITION_BACKGROUND_CANCEL_DURATION_MS)
-                    // 用统一 Job：栈变化触发的 LaunchedEffect 返回路径见 phase==RETURNING 会跳过。
-                    // 景深收尾时长 = morph 后半段，避免 blur 先/后于 shell 落位。
+                    )
+                    // 消糊与 morph 剩余墙钟锁步；禁止 min 160 把糊拖过落位。
+                    val clearDurationMs = resolveMorphAlignedDepthClearDurationMs(
+                        morphRemainingMs = morphRemainingMs,
+                        blurStartProgress = blurAtCommit,
+                    )
                     launchVideoCardDepthAnimation {
-                        videoCardTransitionBackgroundProgress.animateTo(
-                            targetValue = 0f,
-                            animationSpec = tween(
-                                durationMillis = morphRemainingMs,
-                                easing = resolveVideoCardTransitionBackgroundReturnClearEasing(),
-                            ),
-                        )
+                        if (clearDurationMs <= 0 || blurAtCommit <= 0.001f) {
+                            videoCardTransitionBackgroundProgress.snapTo(0f)
+                        } else {
+                            videoCardTransitionBackgroundProgress.animateTo(
+                                targetValue = 0f,
+                                animationSpec = tween(
+                                    durationMillis = clearDurationMs,
+                                    easing = resolveVideoCardTransitionBackgroundReturnClearEasing(),
+                                ),
+                            )
+                        }
                         val parentSourceRoute =
                             resolveCardMorphDestinationSourceRoute(targetBackKey)
                         if (isVideoCardReturnTargetRoute(parentSourceRoute)) {

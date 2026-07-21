@@ -205,20 +205,59 @@ class VideoCardTransitionBackgroundPolicyTest {
     }
 
     @Test
-    fun softClearDepthKeepsMildHoldThroughMidReturnWithoutHardBounce() {
-        assertEquals(1f, softClearVideoCardTransitionDepth(1f), 0.0001f)
-        // 1 - 0.5^1.2 ≈ 0.565；应接近线性，避免旧二次方 0.75 的中段滞留
-        assertEquals(0.5647f, softClearVideoCardTransitionDepth(0.5f), 0.01f)
-        assertEquals(0f, softClearVideoCardTransitionDepth(0f), 0.0001f)
-        assertTrue(
-            softClearVideoCardTransitionDepth(0.5f) >
-                resolveVideoCardTransitionDepthProgress(
-                    progress = 0.5f,
-                    phase = VideoCardTransitionBackgroundPhase.OPENING,
-                ),
+    fun returningDepthProgressIsLinearToLockstepWithMorph() {
+        // RETURNING 与 OPENING 同源线性，禁止 soft-clear 二次映射拖糊。
+        assertEquals(
+            0.5f,
+            resolveVideoCardTransitionDepthProgress(
+                progress = 0.5f,
+                phase = VideoCardTransitionBackgroundPhase.RETURNING,
+            ),
+            0.0001f,
         )
-        // 不得明显高于线性中点太多，否则落位像回弹
-        assertTrue(softClearVideoCardTransitionDepth(0.5f) < 0.65f)
+        assertEquals(
+            0.5f,
+            resolveVideoCardTransitionDepthProgress(
+                progress = 0.5f,
+                phase = VideoCardTransitionBackgroundPhase.OPENING,
+            ),
+            0.0001f,
+        )
+        // 遗留 soft-clear 曲线仍可算，但主路径不再使用。
+        assertEquals(0.5647f, softClearVideoCardTransitionDepth(0.5f), 0.01f)
+    }
+
+    @Test
+    fun morphAlignedDepthClearDuration_matchesMorphRemainingWallClock() {
+        assertEquals(
+            360,
+            resolveMorphAlignedDepthClearDurationMs(
+                morphRemainingMs = 360,
+                blurStartProgress = 1f,
+            ),
+        )
+        assertEquals(
+            180,
+            resolveMorphAlignedDepthClearDurationMs(
+                morphRemainingMs = 360,
+                blurStartProgress = 0.5f,
+            ),
+        )
+        // 禁止 min 160 地板：手势已拖到底后不应再补一段长消糊。
+        assertEquals(
+            0,
+            resolveMorphAlignedDepthClearDurationMs(
+                morphRemainingMs = 90,
+                blurStartProgress = 0f,
+            ),
+        )
+        assertEquals(
+            18,
+            resolveMorphAlignedDepthClearDurationMs(
+                morphRemainingMs = 90,
+                blurStartProgress = 0.2f,
+            ),
+        )
     }
 
     @Test
@@ -243,15 +282,16 @@ class VideoCardTransitionBackgroundPolicyTest {
         )
 
         assertEquals(20f, start.blurRadiusPx)
-        // soft-clear：progress=0.5 时 depth≈0.56，blur 约 11px，中段不清空、也不滞留。
-        assertEquals(11f, middle.blurRadiusPx, 1f)
+        // 线性锁步：progress=0.5 → blur 10px
+        assertEquals(10f, middle.blurRadiusPx, 1f)
         assertTrue(middle.blurRadiusPx in 1f..<start.blurRadiusPx)
         assertEquals(0f, end.blurRadiusPx)
         assertTrue(start.scrimAlpha > middle.scrimAlpha)
         assertTrue(middle.scrimAlpha > 0f)
         assertEquals(0f, end.scrimAlpha)
         assertEquals(0.978f, start.contentScale, 0.0001f)
-        assertEquals(0.9876f, middle.contentScale, 0.005f)
+        // 线性：p=0.5 → scale = 1 - 0.022*0.5 = 0.989
+        assertEquals(0.989f, middle.contentScale, 0.0001f)
         assertEquals(1f, end.contentScale)
     }
 
@@ -343,8 +383,8 @@ class VideoCardTransitionBackgroundPolicyTest {
 
         assertTrue(frame.blurRadiusPx > 0f)
         assertTrue(frame.scrimAlpha > 0f)
-        // soft-clear：p=0.25 → depth≈0.295 → scale=1-0.022*0.295
-        assertEquals(0.9935f, frame.contentScale, 0.005f)
+        // 线性：p=0.25 → scale = 1 - 0.022*0.25 = 0.9945
+        assertEquals(0.9945f, frame.contentScale, 0.0001f)
     }
 
     @Test

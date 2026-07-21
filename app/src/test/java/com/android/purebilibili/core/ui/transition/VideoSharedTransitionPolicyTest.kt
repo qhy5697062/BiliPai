@@ -518,10 +518,11 @@ class VideoSharedTransitionPolicyTest {
             resolveVideoCardSharedTransitionReturnEasing().transform(0.5f),
             0.001f,
         )
-        // 景深返回清晰单独用 SoftClear：中段 fraction 明显低于 Continuity，模糊不会过早掐清。
-        assertTrue(
-            resolveVideoCardTransitionBackgroundReturnClearEasing().transform(0.5f) <
-                AppMotionEasing.Continuity.transform(0.5f) - 0.2f,
+        // 景深返回清晰与 morph 同用 Linear，中段 fraction 与时间线性对齐。
+        assertEquals(
+            0.5f,
+            resolveVideoCardTransitionBackgroundReturnClearEasing().transform(0.5f),
+            0.001f,
         )
     }
 

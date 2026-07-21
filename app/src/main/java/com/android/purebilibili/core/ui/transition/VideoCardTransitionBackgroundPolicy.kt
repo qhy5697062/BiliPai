@@ -25,13 +25,13 @@ import kotlin.math.roundToInt
 // - 峰值 blur 固定 20px（不按机型降级）；仅系统减弱动画/API<31 走 scrim-only
 // - 冻结层：首帧 record 一次后只改 BlurEffect/scale，禁止 live 重录（稳帧，不伤观感）
 // - 压暗全程保留（含 HELD），避免打开完成后景深断裂
-// - 返回：轻度 SoftClear，避免二次方中段滞留造成落位回弹感
+// - 返回：景深 progress 与 shared morph 同墙钟、同 Linear，禁止 SoftClear 拖糊
 private const val VIDEO_CARD_TRANSITION_MAX_BLUR_RADIUS_PX = 20f
 private const val VIDEO_CARD_TRANSITION_BLUR_QUANTUM_PX = 1f
 private const val VIDEO_CARD_TRANSITION_MAX_SCRIM_ALPHA_DARK = 0.22f
 private const val VIDEO_CARD_TRANSITION_MAX_SCRIM_ALPHA_LIGHT = 0.11f
 private const val VIDEO_CARD_TRANSITION_LIGHT_REDUCED_OPENING_SCRIM_ALPHA = 0.07f
-// 返回落位时首页略缩再回 1.0 的幅度；过大 + soft-clear 会像封面/列表「回弹」。
+// 返回落位时首页略缩再回 1.0 的幅度；过大 + 非线性消糊会像封面/列表「回弹」。
 private const val VIDEO_CARD_TRANSITION_MAX_CONTENT_SCALE_REDUCTION = 0.022f
 /** 景深缩放露出的边缘：至少压到这个 tint 强度，避免浅色主题读成「白条」。 */
 private const val VIDEO_CARD_TRANSITION_SCALE_GAP_MIN_TINT_LIGHT = 0.34f
@@ -223,11 +223,10 @@ internal fun resolveVideoCardTransitionReturnFullDurationMillis(
 }
 
 /**
- * 返回动画提交时，若手势已消解部分虚化(startProgress < 1)，剩余 [RETURNING] 动画按比例缩短，
- * 保持与共享元素落位一致的视觉速度，避免手势拖到底后仍补一段完整时长的收尾。
+ * 返回动画提交时，若手势已消解部分虚化(startProgress < 1)，剩余 [RETURNING] 动画按比例缩短。
  *
- * 与 [resolveVideoCardReturnDepthBlurRemainingDurationMs] 同一公式；
- * morph 后半段时长见 [resolveVideoCardSharedMorphRemainingDurationMs]。
+ * 默认 [minDurationMs] 仅用于**非 morph 对齐**的取消收尾；与 shell morph 同墙钟时请用
+ * [resolveMorphAlignedDepthClearDurationMs]（min=0，禁止把糊拖过落位）。
  */
 internal fun resolveVideoCardTransitionBackgroundReturnDurationMs(
     startProgress: Float,
@@ -235,8 +234,29 @@ internal fun resolveVideoCardTransitionBackgroundReturnDurationMs(
     minDurationMs: Int = VIDEO_CARD_TRANSITION_BACKGROUND_CANCEL_DURATION_MS
 ): Int {
     val clamped = startProgress.coerceIn(0f, 1f)
-    val safeFull = fullDurationMs.coerceAtLeast(minDurationMs)
-    return (safeFull * clamped).roundToInt().coerceIn(minDurationMs, safeFull)
+    val safeFull = fullDurationMs.coerceAtLeast(0)
+    val raw = (safeFull * clamped).roundToInt()
+    if (minDurationMs <= 0) return raw.coerceIn(0, safeFull.coerceAtLeast(0))
+    val safeMin = minDurationMs.coerceAtMost(safeFull.coerceAtLeast(minDurationMs))
+    return raw.coerceIn(safeMin, safeFull.coerceAtLeast(safeMin))
+}
+
+/**
+ * 景深消糊时长与 shared morph 剩余时长锁步。
+ *
+ * - morphRemainingMs：shell bounds 后半段（或满程）墙钟
+ * - blurStartProgress：提交时剩余模糊 1→0
+ * - 结果 = morph * blur，Linear 播完时二者同时到 0，避免「卡已落位、背景还糊」
+ */
+internal fun resolveMorphAlignedDepthClearDurationMs(
+    morphRemainingMs: Int,
+    blurStartProgress: Float,
+): Int {
+    return resolveVideoCardTransitionBackgroundReturnDurationMs(
+        startProgress = blurStartProgress,
+        fullDurationMs = morphRemainingMs.coerceAtLeast(0),
+        minDurationMs = 0,
+    )
 }
 
 /**
@@ -611,27 +631,26 @@ internal fun Modifier.videoCardTransitionBackgroundEffect(
 }
 
 /**
- * 进场/持有：景深与导航 progress 同源。
- * 返回：soft-clear remapping，中段多留一点模糊与下沉，避免线性/ Continuity 过早掐清。
+ * 进场/持有/返回：景深 progress 一律线性同源。
+ *
+ * 返回不再做 soft-clear 二次映射——shared morph 是 Linear，再 remap 会让模糊层
+ * 落后于壳落位。遗留 [softClearVideoCardTransitionDepth] 仅供测试/兼容读取。
  */
 internal fun resolveVideoCardTransitionDepthProgress(
     progress: Float,
     phase: VideoCardTransitionBackgroundPhase = VideoCardTransitionBackgroundPhase.OPENING,
 ): Float {
-    val clamped = progress.coerceIn(0f, 1f)
-    return when (phase) {
-        VideoCardTransitionBackgroundPhase.RETURNING -> softClearVideoCardTransitionDepth(clamped)
-        else -> clamped
-    }
+    @Suppress("UNUSED_PARAMETER")
+    val ignored = phase
+    return progress.coerceIn(0f, 1f)
 }
 
 /**
- * progress 仍为「剩余景深」1→0；轻微 ease-out，避免二次方中段滞留造成「先停再弹开」的回弹感。
- * depth = 1 - (1 - p)^1.2，p=0.5 时约 0.56（接近线性 0.5）。
+ * 遗留 soft-clear 曲线（主路径 RETURNING 已改线性锁步 morph）。
+ * depth = 1 - (1 - p)^1.2，p=0.5 时约 0.56。
  */
 internal fun softClearVideoCardTransitionDepth(progress: Float): Float {
     val remaining = (1f - progress.coerceIn(0f, 1f))
-    // remaining^1.2 keeps a mild hold without the old ^2 mid-return stall.
     val easedRemaining = remaining.toDouble().pow(1.2).toFloat()
     return (1f - easedRemaining).coerceIn(0f, 1f)
 }
