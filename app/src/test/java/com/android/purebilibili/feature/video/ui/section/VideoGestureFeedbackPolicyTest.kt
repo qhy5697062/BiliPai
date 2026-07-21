@@ -312,7 +312,8 @@ class VideoGestureFeedbackPolicyTest {
         )
 
         assertEquals(Color(0xFFFFD54F), policy.accentColor)
-        assertTrue(policy.containerAlpha > 0.15f)
+        // Scrim must stay opaque enough for white text over bright video frames.
+        assertTrue(policy.containerAlpha >= 0.70f)
     }
 
     @Test
@@ -324,6 +325,7 @@ class VideoGestureFeedbackPolicyTest {
 
         assertEquals(Color(0xFF80DEEA), policy.accentColor)
         assertTrue(policy.glowAlpha > 0.3f)
+        assertTrue(policy.containerAlpha >= 0.70f)
     }
 
     @Test
@@ -350,16 +352,16 @@ class VideoGestureFeedbackPolicyTest {
     fun `resolveVideoGestureMotionSpec keeps tuned durations for hints and digit transitions`() {
         val spec = resolveVideoGestureMotionSpec()
 
-        assertEquals(10f, spec.digitInitialBlurRadiusDp)
-        assertEquals(0.42f, spec.digitInitialAlpha)
-        assertEquals(40, spec.digitBlurHoldDurationMillis)
-        assertEquals(260, spec.digitBlurResetDurationMillis)
-        assertEquals(220, spec.digitAlphaResetDurationMillis)
-        assertEquals(220, spec.digitEnterFadeDurationMillis)
-        assertEquals(140, spec.digitExitFadeDurationMillis)
+        assertEquals(16f, spec.digitInitialBlurRadiusDp)
+        assertEquals(0.28f, spec.digitInitialAlpha)
+        assertEquals(16, spec.digitBlurHoldDurationMillis)
+        assertEquals(160, spec.digitBlurResetDurationMillis)
+        assertEquals(140, spec.digitAlphaResetDurationMillis)
+        assertEquals(140, spec.digitEnterFadeDurationMillis)
+        assertEquals(90, spec.digitExitFadeDurationMillis)
         assertEquals(0, spec.digitScaleDurationMillis)
-        assertEquals(0.82f, spec.digitSlideSpringDampingRatio)
-        assertEquals(520f, spec.digitSlideSpringStiffness)
+        assertEquals(0.86f, spec.digitSlideSpringDampingRatio)
+        assertEquals(720f, spec.digitSlideSpringStiffness)
         assertEquals(150, spec.orientationHintEnterFadeDurationMillis)
         assertEquals(230, spec.orientationHintEnterTransformDurationMillis)
         assertEquals(200, spec.orientationHintExitDurationMillis)

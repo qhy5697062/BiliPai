@@ -1325,83 +1325,92 @@ private fun GestureIndicator(
             }
         }
     } else {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = modifier
-                .widthIn(min = 128.dp, max = 190.dp)
-                .padding(horizontal = 18.dp, vertical = 14.dp)
+        Surface(
+            modifier = modifier,
+            shape = overlayShape,
+            color = Color.Black.copy(alpha = 0.74f),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.58f)),
+            shadowElevation = 6.dp,
+            tonalElevation = 0.dp
         ) {
-            when (mode) {
-                FullscreenGestureMode.Brightness -> {
-                    Icon(CupertinoIcons.Default.SunMax, null, tint = accentColor, modifier = Modifier.size(36.dp))
-                    Spacer(Modifier.height(8.dp))
-                    Text("亮度", color = Color.White.copy(alpha = 0.9f), fontSize = 14.sp)
-                    Spacer(Modifier.height(4.dp))
-                    AnimatedGesturePercentText(
-                        percent = (value * 100).toInt(),
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        label = "fullscreen-brightness-percent"
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(99.dp))
-                            .background(Color.White.copy(alpha = 0.20f))
-                    ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .widthIn(min = 128.dp, max = 190.dp)
+                    .padding(horizontal = 18.dp, vertical = 14.dp)
+            ) {
+                when (mode) {
+                    FullscreenGestureMode.Brightness -> {
+                        Icon(CupertinoIcons.Default.SunMax, null, tint = accentColor, modifier = Modifier.size(36.dp))
+                        Spacer(Modifier.height(8.dp))
+                        Text("亮度", color = Color.White.copy(alpha = 0.9f), fontSize = 14.sp)
+                        Spacer(Modifier.height(4.dp))
+                        AnimatedGesturePercentText(
+                            percent = (value * 100).toInt(),
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            label = "fullscreen-brightness-percent"
+                        )
+                        Spacer(Modifier.height(8.dp))
                         Box(
                             modifier = Modifier
-                                .fillMaxHeight()
-                                .fillMaxWidth(renderProgress)
-                                .background(
-                                    Brush.horizontalGradient(
-                                        colors = listOf(accentColor.copy(alpha = 0.66f), accentColor)
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(99.dp))
+                                .background(Color.White.copy(alpha = 0.20f))
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(renderProgress)
+                                    .background(
+                                        Brush.horizontalGradient(
+                                            colors = listOf(accentColor.copy(alpha = 0.66f), accentColor)
+                                        )
                                     )
-                                )
+                            )
+                        }
+                    }
+                    FullscreenGestureMode.Volume -> {
+                        val volumeIcon = when {
+                            value < 0.01f -> CupertinoIcons.Default.SpeakerSlash
+                            value < 0.5f -> CupertinoIcons.Default.Speaker
+                            else -> CupertinoIcons.Default.SpeakerWave2
+                        }
+                        Icon(volumeIcon, null, tint = accentColor, modifier = Modifier.size(36.dp))
+                        Spacer(Modifier.height(8.dp))
+                        Text("音量", color = Color.White.copy(alpha = 0.9f), fontSize = 14.sp)
+                        Spacer(Modifier.height(4.dp))
+                        AnimatedGesturePercentText(
+                            percent = (value * 100).toInt(),
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            label = "fullscreen-volume-percent"
                         )
-                    }
-                }
-                FullscreenGestureMode.Volume -> {
-                    val volumeIcon = when {
-                        value < 0.01f -> CupertinoIcons.Default.SpeakerSlash
-                        value < 0.5f -> CupertinoIcons.Default.Speaker
-                        else -> CupertinoIcons.Default.SpeakerWave2
-                    }
-                    Icon(volumeIcon, null, tint = accentColor, modifier = Modifier.size(36.dp))
-                    Spacer(Modifier.height(8.dp))
-                    Text("音量", color = Color.White.copy(alpha = 0.9f), fontSize = 14.sp)
-                    Spacer(Modifier.height(4.dp))
-                    AnimatedGesturePercentText(
-                        percent = (value * 100).toInt(),
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        label = "fullscreen-volume-percent"
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(99.dp))
-                            .background(Color.White.copy(alpha = 0.20f))
-                    ) {
+                        Spacer(Modifier.height(8.dp))
                         Box(
                             modifier = Modifier
-                                .fillMaxHeight()
-                                .fillMaxWidth(renderProgress)
-                                .background(
-                                    Brush.horizontalGradient(
-                                        colors = listOf(accentColor.copy(alpha = 0.66f), accentColor)
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(99.dp))
+                                .background(Color.White.copy(alpha = 0.20f))
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(renderProgress)
+                                    .background(
+                                        Brush.horizontalGradient(
+                                            colors = listOf(accentColor.copy(alpha = 0.66f), accentColor)
+                                        )
                                     )
-                                )
-                        )
+                            )
+                        }
                     }
+                    else -> Unit
                 }
-                else -> Unit
             }
         }
     }

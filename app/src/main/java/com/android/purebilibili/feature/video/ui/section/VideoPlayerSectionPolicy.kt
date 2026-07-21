@@ -693,21 +693,22 @@ internal fun resolveGestureLevelOverlayVisualPolicy(
     return when (mode) {
         VideoGestureMode.Brightness -> GestureLevelOverlayVisualPolicy(
             accentColor = Color(0xFFFFD54F),
-            containerAlpha = 0.20f + progress * 0.08f,
-            borderAlpha = 0.52f + progress * 0.22f,
+            // Dark scrim must stay opaque enough for white text on bright frames.
+            containerAlpha = 0.70f + progress * 0.06f,
+            borderAlpha = 0.48f + progress * 0.22f,
             glowAlpha = 0.30f + progress * 0.40f
         )
 
         VideoGestureMode.Volume -> GestureLevelOverlayVisualPolicy(
             accentColor = Color(0xFF80DEEA),
-            containerAlpha = 0.19f + progress * 0.08f,
-            borderAlpha = 0.50f + progress * 0.20f,
+            containerAlpha = 0.70f + progress * 0.06f,
+            borderAlpha = 0.46f + progress * 0.22f,
             glowAlpha = 0.28f + progress * 0.38f
         )
 
         else -> GestureLevelOverlayVisualPolicy(
             accentColor = Color.White,
-            containerAlpha = 0.22f,
+            containerAlpha = 0.72f,
             borderAlpha = 0.50f,
             glowAlpha = 0.32f
         )

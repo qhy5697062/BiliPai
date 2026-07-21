@@ -1646,6 +1646,29 @@ fun VideoPlayerSection(
                                         slideVolumeBrightnessEnabled = slideVolumeBrightnessEnabled
                                     )
 
+                                    // Seed level UI with the starting value as soon as the mode locks in,
+                                    // so the overlay never opens blank or stuck on a previous gesture percent.
+                                    when (gestureMode) {
+                                        VideoGestureMode.Brightness -> {
+                                            gesturePercent = startBrightness.coerceIn(0f, 1f)
+                                            gestureIcon = CupertinoIcons.Default.SunMax
+                                        }
+                                        VideoGestureMode.Volume -> {
+                                            val maxVolumeStep = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                                            gesturePercent = if (maxVolumeStep > 0) {
+                                                startVolumeStep.toFloat() / maxVolumeStep.toFloat()
+                                            } else {
+                                                0f
+                                            }
+                                            gestureIcon = when {
+                                                gesturePercent < 0.01f -> CupertinoIcons.Default.SpeakerSlash
+                                                gesturePercent < 0.5f -> CupertinoIcons.Default.Speaker
+                                                else -> CupertinoIcons.Default.SpeakerWave2
+                                            }
+                                        }
+                                        else -> Unit
+                                    }
+
                                     // 横屏中间 1/3 的垂直手势直接忽略，避免误触亮度/音量
                                     if (isFullscreen && gestureMode == VideoGestureMode.None) {
                                         isGestureVisible = false
@@ -3542,7 +3565,9 @@ fun VideoPlayerSection(
         if (shouldShowSeekIndicator) {
             // 🖼️ Seek 模式：显示带缩略图的预览气泡
             Box(
-                modifier = Modifier.align(Alignment.Center),
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .zIndex(40f),
                 contentAlignment = Alignment.Center
             ) {
                 if (videoshotData != null && videoshotData.isValid) {
@@ -3570,7 +3595,10 @@ fun VideoPlayerSection(
 
         AnimatedVisibility(
             visible = shouldShowLevelIndicator,
-            modifier = Modifier.align(Alignment.Center),
+            modifier = Modifier
+                .align(Alignment.Center)
+                // Keep above player chrome so volume/brightness feedback stays visible.
+                .zIndex(40f),
             enter = fadeIn(animationSpec = tween(gestureMotionSpec.levelOverlayEnterFadeDurationMillis)) +
                 scaleIn(
                     initialScale = 0.84f,
@@ -3620,11 +3648,19 @@ fun VideoPlayerSection(
                 offset = Offset(0f, 2f),
                 blurRadius = 8f
             )
-            Box(
+            val levelOverlayShape = RoundedCornerShape(18.dp)
+            Surface(
                 modifier = Modifier
                     .wrapContentSize()
                     .padding(horizontal = 18.dp, vertical = 16.dp),
-                contentAlignment = Alignment.Center
+                shape = levelOverlayShape,
+                color = Color.Black.copy(alpha = visualPolicy.containerAlpha),
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = Color.White.copy(alpha = visualPolicy.borderAlpha)
+                ),
+                shadowElevation = 6.dp,
+                tonalElevation = 0.dp
             ) {
                 Column(
                     modifier = Modifier
@@ -4021,7 +4057,10 @@ fun VideoPlayerSection(
                 player = playerState.player,
                 title = uiState.info.title,
                 // [修复] 竖屏全屏模式下隐藏底部 Overlay，避免进度状态冲突
-                isVisible = showControls && !isPortraitFullscreen,
+                // 手势调节音量/亮度/进度时隐藏控制栏，避免盖住中间手势 UI
+                isVisible = showControls &&
+                    !isPortraitFullscreen &&
+                    gestureMode == VideoGestureMode.None,
                 onToggleVisible = { showControls = !showControls },
                 isFullscreen = isFullscreen,
                 currentQualityLabel = uiState.qualityLabels.getOrNull(uiState.qualityIds.indexOf(displayedQualityId)) ?: "自动",

@@ -70,15 +70,16 @@ fun shouldTriggerGesturePercentHaptic(
 }
 
 internal object GesturePercentMotionDefaults {
-    const val InitialBlurRadiusDp = 10f
-    const val InitialAlpha = 0.42f
-    const val BlurHoldDurationMillis = 40
-    const val BlurResetDurationMillis = 260
-    const val AlphaResetDurationMillis = 220
-    const val EnterFadeDurationMillis = 220
-    const val ExitFadeDurationMillis = 140
-    const val SlideSpringDampingRatio = 0.82f
-    const val SlideSpringStiffness = 520f
+    // Stronger start blur + faster settle so rapid volume/brightness steps stay 跟手.
+    const val InitialBlurRadiusDp = 16f
+    const val InitialAlpha = 0.28f
+    const val BlurHoldDurationMillis = 16
+    const val BlurResetDurationMillis = 160
+    const val AlphaResetDurationMillis = 140
+    const val EnterFadeDurationMillis = 140
+    const val ExitFadeDurationMillis = 90
+    const val SlideSpringDampingRatio = 0.86f
+    const val SlideSpringStiffness = 720f
 
     fun <T> slideSpring(): SpringSpec<T> = spring(
         dampingRatio = SlideSpringDampingRatio,

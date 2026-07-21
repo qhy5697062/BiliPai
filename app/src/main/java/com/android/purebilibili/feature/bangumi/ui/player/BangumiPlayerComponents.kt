@@ -481,12 +481,15 @@ fun BangumiGestureIndicator(
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        color = Color.Transparent
+        shape = RoundedCornerShape(18.dp),
+        color = Color.Black.copy(alpha = 0.74f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.58f)),
+        shadowElevation = 6.dp,
+        tonalElevation = 0.dp
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(24.dp)
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp)
         ) {
             when (mode) {
                 BangumiGestureMode.Brightness -> {
