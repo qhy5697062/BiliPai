@@ -16,6 +16,25 @@ import kotlin.test.assertTrue
 class PortraitVideoLoadPolicyTest {
 
     @Test
+    fun playbackTargetQuality_prefersUserSettingOverFallback() {
+        assertEquals(64, resolvePortraitPlaybackTargetQuality())
+        assertEquals(80, resolvePortraitPlaybackTargetQuality(preferredQuality = 80))
+        assertEquals(125, resolvePortraitPlaybackTargetQuality(preferredQuality = 125))
+        assertEquals(127, resolvePortraitPlaybackTargetQuality(preferredQuality = 127))
+        assertEquals(64, resolvePortraitPlaybackTargetQuality(preferredQuality = 0))
+        assertEquals(64, resolvePortraitPlaybackTargetQuality(preferredQuality = -1))
+    }
+
+    @Test
+    fun qualityLabel_coversPremiumAndAutoTiers() {
+        assertEquals("自动", resolvePortraitQualityLabel(127))
+        assertEquals("HDR", resolvePortraitQualityLabel(125))
+        assertEquals("4K", resolvePortraitQualityLabel(120))
+        assertEquals("1080P", resolvePortraitQualityLabel(80))
+        assertEquals("720P", resolvePortraitQualityLabel(64))
+    }
+
+    @Test
     fun parallelBootstrap_enablesWhenFeedProvidesCid() {
         assertTrue(
             shouldUsePortraitParallelPlaybackBootstrap(
@@ -109,6 +128,41 @@ class PortraitVideoLoadPolicyTest {
 
         assertEquals("https://cdn.example/64.m4s", urls?.videoUrl)
         assertEquals("https://cdn.example/audio.m4s", urls?.audioUrl)
+    }
+
+    @Test
+    fun playbackStreamUrls_honorsPreferredHighQualityTrack() {
+        val playData = PlayUrlData(
+            dash = Dash(
+                video = listOf(
+                    DashVideo(
+                        id = 64,
+                        baseUrl = "https://cdn.example/64.m4s",
+                        codecs = "avc1.64001E"
+                    ),
+                    DashVideo(
+                        id = 80,
+                        baseUrl = "https://cdn.example/80.m4s",
+                        codecs = "hev1.1.6.L120.90"
+                    )
+                ),
+                audio = listOf(
+                    DashAudio(
+                        id = 30232,
+                        baseUrl = "https://cdn.example/audio.m4s"
+                    )
+                )
+            )
+        )
+
+        val urls = resolvePortraitPlaybackStreamUrls(
+            playData = playData,
+            targetQuality = 80,
+            isHevcSupported = true,
+            isAv1Supported = false
+        )
+
+        assertEquals("https://cdn.example/80.m4s", urls?.videoUrl)
     }
 
     @Test

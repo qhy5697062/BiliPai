@@ -699,6 +699,38 @@ class VideoDetailLayoutModePolicyTest {
     }
 
     @Test
+    fun phoneOrientationObserverPolicy_stopsListeningDuringPortraitImmersiveFullscreen() {
+        assertFalse(
+            shouldObservePhoneAutoRotate(
+                autoRotateEnabled = true,
+                systemAutoRotateEnabled = true,
+                isCompactDevice = true,
+                isOrientationDrivenFullscreen = true,
+                fullscreenMode = FullscreenMode.AUTO,
+                manualPortraitHoldActive = false,
+                isPortraitFullscreen = true
+            )
+        )
+    }
+
+    @Test
+    fun phoneOrientationPolicy_locksPortraitWhilePortraitImmersiveFullscreen() {
+        assertEquals(
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+            resolvePhoneVideoRequestedOrientation(
+                autoRotateEnabled = true,
+                systemAutoRotateEnabled = true,
+                fullscreenMode = FullscreenMode.AUTO,
+                isCompactDevice = true,
+                isOrientationDrivenFullscreen = true,
+                isFullscreenMode = true,
+                isVerticalVideo = true,
+                isPortraitFullscreen = true
+            )
+        )
+    }
+
+    @Test
     fun phoneOrientationPolicy_fullscreenModeNone_keepsCurrentOrientation() {
         assertEquals(
             null,

@@ -75,4 +75,29 @@ class VideoAspectRatioLayoutPolicyTest {
         assertEquals(16f / 9f, VideoAspectRatio.RATIO_16_9.targetAspectRatio)
         assertEquals(4f / 3f, VideoAspectRatio.RATIO_4_3.targetAspectRatio)
     }
+
+    @Test
+    fun `safe aspect ratio forces stretch to fit for vertical content`() {
+        assertEquals(
+            VideoAspectRatio.FIT,
+            resolveSafeVideoAspectRatio(
+                preferred = VideoAspectRatio.STRETCH,
+                isVerticalVideo = true
+            )
+        )
+        assertEquals(
+            VideoAspectRatio.FILL,
+            resolveSafeVideoAspectRatio(
+                preferred = VideoAspectRatio.FILL,
+                isVerticalVideo = true
+            )
+        )
+        assertEquals(
+            VideoAspectRatio.STRETCH,
+            resolveSafeVideoAspectRatio(
+                preferred = VideoAspectRatio.STRETCH,
+                isVerticalVideo = false
+            )
+        )
+    }
 }

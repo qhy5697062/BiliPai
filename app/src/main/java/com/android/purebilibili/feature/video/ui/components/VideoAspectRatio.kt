@@ -60,6 +60,21 @@ internal data class VideoViewportLayout(
     val height: Int
 )
 
+/**
+ * PiliPlus parity: never apply stretch/fill deformation to vertical content.
+ * Cover (FILL/ZOOM) remains allowed for immersive portrait viewing.
+ */
+internal fun resolveSafeVideoAspectRatio(
+    preferred: VideoAspectRatio,
+    isVerticalVideo: Boolean
+): VideoAspectRatio {
+    if (!isVerticalVideo) return preferred
+    return when (preferred) {
+        VideoAspectRatio.STRETCH -> VideoAspectRatio.FIT
+        else -> preferred
+    }
+}
+
 internal fun resolveVideoViewportLayout(
     containerWidth: Int,
     containerHeight: Int,

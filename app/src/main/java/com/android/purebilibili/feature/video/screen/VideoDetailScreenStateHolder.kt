@@ -1664,7 +1664,8 @@ internal fun VideoDetailScreenStateHolder(
         isActivityInMultiWindowMode,
         userRequestedFullscreen,
         manualPortraitHoldActive,
-        isVerticalVideo
+        isVerticalVideo,
+        isPortraitFullscreen
     ) {
         val requestedOrientation = resolvePhoneVideoRequestedOrientation(
             autoRotateEnabled = autoRotateEnabled,
@@ -1676,6 +1677,7 @@ internal fun VideoDetailScreenStateHolder(
             manualFullscreenRequested = userRequestedFullscreen,
             manualPortraitHoldActive = manualPortraitHoldActive,
             isVerticalVideo = isVerticalVideo,
+            isPortraitFullscreen = isPortraitFullscreen,
             currentRequestedOrientation = activity?.requestedOrientation,
             isInMultiWindowMode = isActivityInMultiWindowMode
         ) ?: return@LaunchedEffect
@@ -1685,7 +1687,7 @@ internal fun VideoDetailScreenStateHolder(
         }
         com.android.purebilibili.core.util.Logger.d(
             "VideoDetailScreen",
-            "🔄 Auto-rotate: enabled=$autoRotateEnabled, system=$systemAutoRotateEnabled, hold=$manualPortraitHoldActive, mode=$fullscreenMode, horizontal=$horizontalAdaptationEnabled, requested=$requestedOrientation, fullscreen=$isFullscreenMode, verticalVideo=$isVerticalVideo, isCompactDevice=${windowSizeClass.isCompactDevice}, multiWindow=$isActivityInMultiWindowMode"
+            "🔄 Auto-rotate: enabled=$autoRotateEnabled, system=$systemAutoRotateEnabled, hold=$manualPortraitHoldActive, mode=$fullscreenMode, horizontal=$horizontalAdaptationEnabled, requested=$requestedOrientation, fullscreen=$isFullscreenMode, portraitFs=$isPortraitFullscreen, verticalVideo=$isVerticalVideo, isCompactDevice=${windowSizeClass.isCompactDevice}, multiWindow=$isActivityInMultiWindowMode"
         )
     }
     var lastPhoneAutoRotateLandscapeAppliedAtMs by remember { mutableStateOf<Long?>(null) }
@@ -1697,7 +1699,8 @@ internal fun VideoDetailScreenStateHolder(
         isOrientationDrivenFullscreen,
         fullscreenMode,
         manualPortraitHoldActive,
-        isActivityInMultiWindowMode
+        isActivityInMultiWindowMode,
+        isPortraitFullscreen
     ) {
         if (!shouldObservePhoneAutoRotate(
                 autoRotateEnabled = autoRotateEnabled,
@@ -1706,7 +1709,8 @@ internal fun VideoDetailScreenStateHolder(
                 isOrientationDrivenFullscreen = isOrientationDrivenFullscreen,
                 fullscreenMode = fullscreenMode,
                 manualPortraitHoldActive = manualPortraitHoldActive,
-                isInMultiWindowMode = isActivityInMultiWindowMode
+                isInMultiWindowMode = isActivityInMultiWindowMode,
+                isPortraitFullscreen = isPortraitFullscreen
             )
         ) {
             lastPhoneAutoRotateLandscapeAppliedAtMs = null
@@ -1721,7 +1725,8 @@ internal fun VideoDetailScreenStateHolder(
         useTabletLayout,
         isOrientationDrivenFullscreen,
         manualPortraitHoldActive,
-        isActivityInMultiWindowMode
+        isActivityInMultiWindowMode,
+        isPortraitFullscreen
     ) {
         val hostActivity = activity
         if (
@@ -1733,7 +1738,8 @@ internal fun VideoDetailScreenStateHolder(
                 isOrientationDrivenFullscreen = isOrientationDrivenFullscreen,
                 fullscreenMode = fullscreenMode,
                 manualPortraitHoldActive = manualPortraitHoldActive,
-                isInMultiWindowMode = isActivityInMultiWindowMode
+                isInMultiWindowMode = isActivityInMultiWindowMode,
+                isPortraitFullscreen = isPortraitFullscreen
             ) ||
             !isOrientationDrivenFullscreen
         ) {

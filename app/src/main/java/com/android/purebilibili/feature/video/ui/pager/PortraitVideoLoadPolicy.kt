@@ -19,6 +19,10 @@ import com.android.purebilibili.feature.plugin.PlaybackCdnPlugin
 import com.android.purebilibili.feature.video.viewmodel.buildPlaybackAudioUrlCandidates
 import kotlin.math.min
 
+/**
+ * Fallback when no user preference is available (e.g. unit tests / cold path).
+ * Live portrait playback should pass the detail-page playable default quality instead.
+ */
 internal const val PORTRAIT_PLAYBACK_TARGET_QUALITY = 64
 internal const val PORTRAIT_SWIPE_PREFETCH_OFFSET_THRESHOLD = 0.25f
 internal const val PORTRAIT_EARLY_PLAYBACK_OFFSET_THRESHOLD = 0.58f
@@ -34,7 +38,39 @@ internal data class PortraitPlaybackStreamUrls(
     val audioUrl: String?
 )
 
-internal fun resolvePortraitPlaybackTargetQuality(): Int = PORTRAIT_PLAYBACK_TARGET_QUALITY
+/**
+ * Resolve the playurl qn for portrait pager / Story.
+ *
+ * Prefer the same playable default used by video detail so Wi‑Fi 1080P / VIP 4K-HDR
+ * settings are honored. Cap invalid values to the safe fallback.
+ */
+internal fun resolvePortraitPlaybackTargetQuality(
+    preferredQuality: Int? = null
+): Int {
+    val quality = preferredQuality ?: return PORTRAIT_PLAYBACK_TARGET_QUALITY
+    return quality.takeIf { it > 0 } ?: PORTRAIT_PLAYBACK_TARGET_QUALITY
+}
+
+/**
+ * Short label for the portrait chrome quality chip.
+ * Auto-highest (marker ≥ 127) stays generic because actual track is per-video.
+ */
+internal fun resolvePortraitQualityLabel(qualityId: Int): String {
+    return when {
+        qualityId >= 127 -> "自动"
+        qualityId >= 126 -> "杜比"
+        qualityId >= 125 -> "HDR"
+        qualityId >= 120 -> "4K"
+        qualityId >= 116 -> "1080P60"
+        qualityId >= 112 -> "1080P+"
+        qualityId >= 80 -> "1080P"
+        qualityId >= 74 -> "720P60"
+        qualityId >= 64 -> "720P"
+        qualityId >= 32 -> "480P"
+        qualityId >= 16 -> "360P"
+        else -> "高清"
+    }
+}
 
 internal fun shouldUsePortraitParallelPlaybackBootstrap(
     bvid: String,

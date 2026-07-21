@@ -286,6 +286,17 @@ fun PortraitVideoPager(
     val isExternalPlaylist by PlaylistManager.isExternalPlaylist.collectAsStateWithLifecycle()
     val prefetchVideoEnabled by SettingsManager.getPrefetchVideo(context)
         .collectAsStateWithLifecycle(initialValue = false)
+    // Align portrait pager playurl qn with detail-page playable default (Wi‑Fi / VIP / auto-highest).
+    val portraitTargetQuality = remember(context) {
+        NetworkUtils.getPlayableDefaultQualityId(
+            context = context,
+            isLoggedIn = !TokenManager.sessDataCache.isNullOrEmpty(),
+            isVip = TokenManager.isVipCache
+        )
+    }
+    val portraitQualityLabel = remember(portraitTargetQuality) {
+        resolvePortraitQualityLabel(portraitTargetQuality)
+    }
     val portraitMediaSourceFactory = remember(context) {
         buildPortraitCachedMediaSourceFactory(context)
     }
@@ -730,13 +741,15 @@ fun PortraitVideoPager(
                     bvid = bvid,
                     aid = aid,
                     requestedCid = requestedCid,
-                    targetQuality = resolvePortraitPlaybackTargetQuality()
+                    targetQuality = resolvePortraitPlaybackTargetQuality(portraitTargetQuality)
                 )
 
                 result.fold(
                     onSuccess = { (info, playData) ->
-                        val streamUrls = resolvePortraitPlaybackStreamUrls(playData)
-                            ?: run {
+                        val streamUrls = resolvePortraitPlaybackStreamUrls(
+                            playData = playData,
+                            targetQuality = resolvePortraitPlaybackTargetQuality(portraitTargetQuality)
+                        ) ?: run {
                                 pendingAutoPlayGeneration = -1
                                 if (shouldApplyLoadResult(
                                         requestGeneration = requestGeneration,
@@ -753,6 +766,7 @@ fun PortraitVideoPager(
                             streamUrls = streamUrls,
                             cachedDashVideos = playData.dash?.video.orEmpty(),
                             cachedDashAudios = playData.dash?.audio.orEmpty(),
+                            targetQuality = resolvePortraitPlaybackTargetQuality(portraitTargetQuality),
                             cdnPlugin = portraitPlaybackCdnPlugin
                         )
 
@@ -865,7 +879,7 @@ fun PortraitVideoPager(
                     VideoRepository.preloadPortraitPlayUrl(
                         bvid = identity.bvid,
                         cid = identity.cid,
-                        targetQuality = resolvePortraitPlaybackTargetQuality()
+                        targetQuality = resolvePortraitPlaybackTargetQuality(portraitTargetQuality)
                     )
                 }
             }
@@ -1010,7 +1024,7 @@ fun PortraitVideoPager(
                             VideoRepository.preloadPortraitPlayUrl(
                                 bvid = target.bvid,
                                 cid = target.cid,
-                                targetQuality = resolvePortraitPlaybackTargetQuality()
+                                targetQuality = resolvePortraitPlaybackTargetQuality(portraitTargetQuality)
                             )
                         }
                     }
@@ -1140,6 +1154,7 @@ fun PortraitVideoPager(
                 recommendationVideos = recommendationItems,
                 knownVideoAspectRatio = knownVideoAspectRatios[itemBvid]
                     ?: (item as? ViewInfo)?.dimension?.let(::resolveAspectRatioFromDimension),
+                qualityLabel = portraitQualityLabel,
                 hasRenderedFirstFrame = (renderedFirstFrameGeneration == activeLoadGeneration),
                 initialProgressPositionMs = resolvePortraitInitialProgressPosition(
                     isFirstPage = page == 0,
@@ -1209,6 +1224,7 @@ private fun VideoPageItem(
     watchLaterVideos: List<RelatedVideo>,
     recommendationVideos: List<RelatedVideo>,
     knownVideoAspectRatio: Float?,
+    qualityLabel: String,
     hasRenderedFirstFrame: Boolean,
     initialProgressPositionMs: Long,
     onCurrentPageScaleChange: (Float) -> Unit,
@@ -2305,7 +2321,7 @@ private fun VideoPageItem(
             },
             
             currentSpeed = currentPlaybackSpeed,
-            currentQualityLabel = "高清",
+            currentQualityLabel = qualityLabel,
             currentRatio = VideoAspectRatio.FIT,
             danmakuEnabled = danmakuEnabled,
             isStatusBarHidden = true,

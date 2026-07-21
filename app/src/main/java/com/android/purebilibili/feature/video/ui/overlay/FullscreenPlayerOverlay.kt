@@ -82,6 +82,7 @@ import com.android.purebilibili.feature.video.ui.components.DanmakuSettingsPanel
 import com.android.purebilibili.feature.video.ui.components.VideoAspectRatio
 import com.android.purebilibili.feature.video.ui.components.PlaybackSpeed
 import com.android.purebilibili.feature.video.ui.components.SpeedSelectionMenuPlacement
+import com.android.purebilibili.feature.video.ui.components.resolveSafeVideoAspectRatio
 import com.android.purebilibili.feature.video.ui.components.toFullscreenAspectRatio
 import com.android.purebilibili.feature.video.ui.components.toVideoAspectRatio
 import com.android.purebilibili.core.ui.common.copyOnLongPress
@@ -189,7 +190,21 @@ fun FullscreenPlayerOverlay(
         .getFullscreenAspectRatio(context)
         .collectAsStateWithLifecycle(initialValue = FullscreenAspectRatio.FIT
         )
-    var aspectRatio by remember { mutableStateOf(fixedFullscreenAspectRatio.toVideoAspectRatio()) }
+    var isVerticalContent by remember(player) {
+        mutableStateOf(
+            player?.videoSize?.let { size ->
+                size.width > 0 && size.height > size.width
+            } ?: false
+        )
+    }
+    var aspectRatio by remember {
+        mutableStateOf(
+            resolveSafeVideoAspectRatio(
+                preferred = fixedFullscreenAspectRatio.toVideoAspectRatio(),
+                isVerticalVideo = isVerticalContent
+            )
+        )
+    }
     var showRatioMenu by remember { mutableStateOf(false) }
     
     //  画质选择菜单状态
@@ -313,8 +328,32 @@ fun FullscreenPlayerOverlay(
         }
     }
 
-    LaunchedEffect(fixedFullscreenAspectRatio) {
-        aspectRatio = fixedFullscreenAspectRatio.toVideoAspectRatio()
+    DisposableEffect(player) {
+        val exoPlayer = player
+        if (exoPlayer == null) {
+            isVerticalContent = false
+            onDispose { }
+        } else {
+            fun updateVerticalContent() {
+                val size = exoPlayer.videoSize
+                isVerticalContent = size.width > 0 && size.height > size.width
+            }
+            updateVerticalContent()
+            val listener = object : Player.Listener {
+                override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
+                    isVerticalContent = videoSize.width > 0 && videoSize.height > videoSize.width
+                }
+            }
+            exoPlayer.addListener(listener)
+            onDispose { exoPlayer.removeListener(listener) }
+        }
+    }
+
+    LaunchedEffect(fixedFullscreenAspectRatio, isVerticalContent) {
+        aspectRatio = resolveSafeVideoAspectRatio(
+            preferred = fixedFullscreenAspectRatio.toVideoAspectRatio(),
+            isVerticalVideo = isVerticalContent
+        )
     }
     
     // 进入全屏时设置横屏和沉浸式
@@ -1213,11 +1252,15 @@ fun FullscreenPlayerOverlay(
                 com.android.purebilibili.feature.video.ui.components.AspectRatioMenu(
                     currentRatio = aspectRatio,
                     onRatioSelected = { ratio ->
-                        aspectRatio = ratio
+                        val safeRatio = resolveSafeVideoAspectRatio(
+                            preferred = ratio,
+                            isVerticalVideo = isVerticalContent
+                        )
+                        aspectRatio = safeRatio
                         scope.launch {
                             SettingsManager.setFullscreenAspectRatio(
                                 context,
-                                ratio.toFullscreenAspectRatio()
+                                safeRatio.toFullscreenAspectRatio()
                             )
                         }
                         showRatioMenu = false

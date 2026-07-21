@@ -28,6 +28,7 @@ import com.android.purebilibili.feature.video.ui.components.VideoAspectRatio
 import com.android.purebilibili.feature.video.ui.components.GesturePercentTransitionDirection
 import com.android.purebilibili.feature.video.ui.components.resolveGesturePercentTransitionDirection
 import com.android.purebilibili.feature.video.ui.components.shouldTriggerGesturePercentHaptic
+import com.android.purebilibili.feature.video.ui.components.resolveSafeVideoAspectRatio
 import com.android.purebilibili.feature.video.ui.components.resolveVideoViewportLayout
 import com.android.purebilibili.feature.video.ui.components.toFullscreenAspectRatio
 import com.android.purebilibili.feature.video.ui.components.toVideoAspectRatio
@@ -907,7 +908,14 @@ fun VideoPlayerSection(
     )
     
     //  视频比例状态
-    var currentAspectRatio by remember { mutableStateOf(fixedFullscreenAspectRatio.toVideoAspectRatio()) }
+    var currentAspectRatio by remember {
+        mutableStateOf(
+            resolveSafeVideoAspectRatio(
+                preferred = fixedFullscreenAspectRatio.toVideoAspectRatio(),
+                isVerticalVideo = isVerticalVideo
+            )
+        )
+    }
     
     //  [新增] 视频翻转状态
     var isFlippedHorizontal by remember { mutableStateOf(false) }
@@ -995,8 +1003,11 @@ fun VideoPlayerSection(
     var panX by remember { mutableFloatStateOf(0f) }
     var panY by remember { mutableFloatStateOf(0f) }
 
-    LaunchedEffect(fixedFullscreenAspectRatio) {
-        currentAspectRatio = fixedFullscreenAspectRatio.toVideoAspectRatio()
+    LaunchedEffect(fixedFullscreenAspectRatio, isVerticalVideo) {
+        currentAspectRatio = resolveSafeVideoAspectRatio(
+            preferred = fixedFullscreenAspectRatio.toVideoAspectRatio(),
+            isVerticalVideo = isVerticalVideo
+        )
     }
 
     DisposableEffect(Unit) {
@@ -4349,10 +4360,14 @@ fun VideoPlayerSection(
 
                 currentAspectRatio = currentAspectRatio,
                 onAspectRatioChange = { ratio ->
-                    currentAspectRatio = ratio
+                    val safeRatio = resolveSafeVideoAspectRatio(
+                        preferred = ratio,
+                        isVerticalVideo = isVerticalVideo
+                    )
+                    currentAspectRatio = safeRatio
                     scope.launch {
                         com.android.purebilibili.core.store.SettingsManager
-                            .setFullscreenAspectRatio(context, ratio.toFullscreenAspectRatio())
+                            .setFullscreenAspectRatio(context, safeRatio.toFullscreenAspectRatio())
                     }
                 },
                 // 🕺 [新增] 分享功能
