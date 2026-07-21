@@ -126,12 +126,13 @@ internal fun resolveTopTabRowHorizontalPaddingDp(
     return if (normalizeTopTabLabelMode(labelMode) == 2) 0f else 4f
 }
 
-// Slightly tighter than before so rest capsule nearly fills the dock (bottom-bar feel),
-// while drag scale still overflows the chrome edge.
+// Rest capsule nearly fills the dock (bottom-bar feel); drag scale may still overflow chrome.
 internal fun resolveTopTabDockIndicatorHorizontalGapDp(hasOuterChromeSurface: Boolean): Float =
     if (hasOuterChromeSurface) 2f else 2f
 
-internal fun resolveTopTabDockIndicatorVerticalGapDp(hasOuterChromeSurface: Boolean): Float = 1f
+// Keep a hairline inset so the capsule doesn't weld to the dock edge.
+internal fun resolveTopTabDockIndicatorVerticalGapDp(hasOuterChromeSurface: Boolean): Float =
+    if (hasOuterChromeSurface) 1f else 1f
 
 internal fun resolveTopTabDockIndicatorWidthDp(
     itemWidthDp: Float,
@@ -145,20 +146,23 @@ internal fun resolveTopTabDockIndicatorWidthDp(
     return maxWidth.coerceAtLeast(minWidth)
 }
 
+/**
+ * Dock indicator height: fill [rowHeight - 2*gap], do **not** clamp with bottom-bar
+ * capsule aspect ratio (width/1.6). Multi-tab slots are narrow (~52–72dp); that clamp
+ * forced ~40–48dp pills inside a 58–64dp dock ("占不满顶部 dock").
+ */
 internal fun resolveTopTabDockIndicatorHeightDp(
     rowHeightDp: Float,
     verticalGapDp: Float,
     minHeightDp: Float,
-    indicatorWidthDp: Float = Float.POSITIVE_INFINITY
+    @Suppress("UNUSED_PARAMETER") indicatorWidthDp: Float = Float.POSITIVE_INFINITY
 ): Float {
     if (rowHeightDp <= 0f) return 0f
     val maxHeight = (rowHeightDp - verticalGapDp.coerceAtLeast(0f) * 2f)
         .coerceAtLeast(0f)
-    val minHeight = minHeightDp.coerceIn(0f, rowHeightDp)
-    return resolveSegmentedControlIndicatorHeightDp(
-        slotWidthDp = indicatorWidthDp,
-        indicatorHeightDp = maxHeight
-    ).coerceAtLeast(minHeight)
+    // Prefer full track fill; minHeight only floors pathological tiny rows.
+    val minHeight = minHeightDp.coerceIn(0f, maxHeight.coerceAtLeast(0f))
+    return maxHeight.coerceAtLeast(minHeight)
 }
 
 internal fun resolveTopTabDockIndicatorOffsetPx(
