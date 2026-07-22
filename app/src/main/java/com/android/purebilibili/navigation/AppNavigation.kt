@@ -2789,10 +2789,10 @@ fun AppNavigation(
                                 com.android.purebilibili.feature.space.SpaceScreen(
                                     mid = spaceKey.mid,
                                     onBack = { performSystemBackAction() },
-                                    onVideoClick = { bvid, resumePositionMs ->
+                                    onVideoClick = { bvid, cid, resumePositionMs ->
                                         navigateToVideoInNavigation3(
                                             bvid,
-                                            0L,
+                                            cid,
                                             "",
                                             resumePositionMs = resumePositionMs
                                         )

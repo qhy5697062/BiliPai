@@ -9,6 +9,7 @@ import com.android.purebilibili.data.model.response.*
 import com.android.purebilibili.data.repository.BangumiRepository
 import com.android.purebilibili.data.repository.ActionRepository
 import com.android.purebilibili.data.repository.FavoriteRepository
+import com.android.purebilibili.data.repository.HistoryRepository
 import com.android.purebilibili.data.repository.shouldContinueDynamicFetchAfterFilter
 import com.android.purebilibili.feature.bangumi.MY_FOLLOW_TYPE_BANGUMI
 import kotlinx.coroutines.CancellationException
@@ -96,8 +97,11 @@ sealed class SpaceUiState {
         val isLoadingAudios: Boolean = false,
         val isLoadingArticles: Boolean = false,
         val hasMoreAudios: Boolean = true,
-        val hasMoreArticles: Boolean = true
-        ,
+        val hasMoreArticles: Boolean = true,
+        val watchProgressByBvid: Map<String, SpaceWatchProgress> = emptyMap(),
+        val lastWatchedVideo: SpaceWatchProgress? = null,
+        val pendingLocateBvid: String? = null,
+        val locateMessage: String? = null,
         val isSearchMode: Boolean = false,
         val searchQuery: String = "",
         val headerState: SpaceHeaderState = SpaceHeaderState(null, null, null, null, "", emptyList(), emptyList()),
@@ -157,6 +161,7 @@ class SpaceViewModel(
     private var activeSpaceArticleJob: Job? = null
     private var activeSpaceSearchJob: Job? = null
     private var activeVideoListJob: Job? = null
+    private var activeSpaceWatchHistoryJob: Job? = null
     private var activeVideoListGeneration: Long = 0
     private val collectionPreviewLimit = 3
     private var currentKeyword: String = ""
@@ -182,6 +187,7 @@ class SpaceViewModel(
         activeSpaceLoadJob?.cancel()
         activeSpaceSupplementalJob?.cancel()
         activeSpaceArticleJob?.cancel()
+        activeSpaceWatchHistoryJob?.cancel()
 
         activeSpaceLoadJob = viewModelScope.launch {
             _uiState.value = SpaceUiState.Loading
@@ -220,6 +226,7 @@ class SpaceViewModel(
                         selectedMainTab = initialMainTab,
                         selectedSubTab = aggregateSeed.defaultSubTab
                     )
+                    loadSpaceWatchHistory(mid = mid, requestGeneration = requestGeneration)
                     loadSpaceSupplemental(mid = mid, requestGeneration = requestGeneration)
                     loadSpaceHeaderMetrics(mid = mid, requestGeneration = requestGeneration)
                     val keys = keysDeferred.await()
@@ -333,6 +340,7 @@ class SpaceViewModel(
                 selectedTab = tabIndexToMainTab(_selectedMainTab.value)
             ).withUpdatedTab(SpaceMainTab.CONTRIBUTION) { it.copy(hasLoaded = true) }
         )
+        loadSpaceWatchHistory(mid = mid, requestGeneration = requestGeneration)
         loadSpaceSupplemental(mid = mid, requestGeneration = requestGeneration)
         ensureSelectedContributionContentLoaded()
         true
@@ -363,6 +371,33 @@ class SpaceViewModel(
             } catch (e: Exception) {
                 android.util.Log.e("SpaceVM", "loadSpaceHeaderMetrics error: ${e.message}", e)
             }
+        }
+    }
+
+    private fun loadSpaceWatchHistory(mid: Long, requestGeneration: Long) {
+        activeSpaceWatchHistoryJob?.cancel()
+        activeSpaceWatchHistoryJob = viewModelScope.launch {
+            val firstPage = HistoryRepository.getHistoryList(ps = 50).getOrNull() ?: return@launch
+            val records = firstPage.list.toMutableList()
+            val cursor = firstPage.cursor
+            if (cursor != null && cursor.max > 0L) {
+                HistoryRepository.getHistoryList(
+                    ps = 50,
+                    max = cursor.max,
+                    viewAt = cursor.view_at,
+                    business = cursor.business
+                ).getOrNull()?.list?.let(records::addAll)
+            }
+            if (!shouldApplySpaceLoadResult(mid, currentMid, requestGeneration, activeSpaceLoadGeneration)) {
+                return@launch
+            }
+
+            val progressByBvid = resolveSpaceWatchProgressByBvid(records, upMid = mid)
+            val current = _uiState.value as? SpaceUiState.Success ?: return@launch
+            _uiState.value = current.copy(
+                watchProgressByBvid = progressByBvid,
+                lastWatchedVideo = resolveSpaceLastWatchedVideo(progressByBvid)
+            )
         }
     }
 
@@ -1460,6 +1495,52 @@ class SpaceViewModel(
         }
     }
 
+    fun locateLastWatchedVideo() {
+        val current = _uiState.value as? SpaceUiState.Success ?: return
+        val target = current.lastWatchedVideo
+        if (target == null || target.title.isBlank()) {
+            _uiState.value = current.copy(locateMessage = "未找到可定位的最近观看视频")
+            return
+        }
+        val videoTab = current.contributionTabs.firstOrNull { it.subTab == SpaceSubTab.VIDEO }
+        if (videoTab == null) {
+            _uiState.value = current.copy(locateMessage = "该空间没有可定位的视频投稿")
+            return
+        }
+
+        currentTid = 0
+        currentOrder = VideoSortOrder.PUBDATE
+        currentKeyword = target.title
+        _selectedMainTab.value = mainTabToTabIndex(SpaceMainTab.CONTRIBUTION)
+        savedStateHandle[KEY_SELECTED_MAIN_TAB] = _selectedMainTab.value
+        _uiState.value = current.copy(
+            selectedTid = 0,
+            sortOrder = VideoSortOrder.PUBDATE,
+            selectedSubTab = SpaceSubTab.VIDEO,
+            selectedContributionTabId = videoTab.id,
+            isSearchMode = true,
+            searchQuery = target.title,
+            pendingLocateBvid = null,
+            locateMessage = null,
+            tabShellState = current.tabShellState.withSelectedTab(SpaceMainTab.CONTRIBUTION)
+        )
+        refreshVideoSearchResults(locateTarget = target)
+    }
+
+    fun consumePendingLocateBvid(bvid: String) {
+        val current = _uiState.value as? SpaceUiState.Success ?: return
+        if (current.pendingLocateBvid == bvid) {
+            _uiState.value = current.copy(pendingLocateBvid = null)
+        }
+    }
+
+    fun consumeLocateMessage(message: String) {
+        val current = _uiState.value as? SpaceUiState.Success ?: return
+        if (current.locateMessage == message) {
+            _uiState.value = current.copy(locateMessage = null)
+        }
+    }
+
     /**
      * When local filter has no hits, auto-pull more dynamic pages and re-filter.
      * Stops on first match, feed end, or [SPACE_DYNAMIC_SEARCH_PREFETCH_PAGE_LIMIT].
@@ -1898,7 +1979,7 @@ class SpaceViewModel(
         return merged
     }
 
-    private fun refreshVideoSearchResults() {
+    private fun refreshVideoSearchResults(locateTarget: SpaceWatchProgress? = null) {
         val current = _uiState.value as? SpaceUiState.Success ?: return
         val requestGeneration = beginVideoListRequest()
         val requestTid = currentTid
@@ -1921,7 +2002,8 @@ class SpaceViewModel(
                     val currentState = _uiState.value as? SpaceUiState.Success ?: return@launch
                     _uiState.value = currentState.copy(
                         isLoadingMore = false,
-                        hasMoreVideos = false
+                        hasMoreVideos = false,
+                        locateMessage = locateTarget?.let { "未在该 UP 的投稿中找到最近观看的视频" }
                     )
                     return@launch
                 }
@@ -1939,21 +2021,37 @@ class SpaceViewModel(
                 val currentState = _uiState.value as? SpaceUiState.Success ?: return@launch
                 if (result != null) {
                     currentPage = result.resolvedPage
-                    _uiState.value = currentState.copy(
-                        videos = result.data.list.vlist,
-                        totalVideos = result.data.page.count,
-                        hasMoreVideos = resolveNextSpaceVideoPage(
-                            order = requestOrder,
-                            currentPage = currentPage,
-                            totalCount = result.data.page.count,
-                            pageSize = pageSize
-                        ) != null,
-                        isLoadingMore = false
+                    val locatedBvid = resolveSpaceLocateSearchTarget(
+                        target = locateTarget,
+                        videos = result.data.list.vlist
                     )
+                    _uiState.value = if (locateTarget != null) {
+                        currentState.copy(
+                            videos = result.data.list.vlist.filter { it.bvid == locatedBvid },
+                            totalVideos = locatedBvid?.let { 1 } ?: 0,
+                            hasMoreVideos = false,
+                            isLoadingMore = false,
+                            pendingLocateBvid = locatedBvid,
+                            locateMessage = if (locatedBvid == null) "未在该 UP 的投稿中找到最近观看的视频" else null
+                        )
+                    } else {
+                        currentState.copy(
+                            videos = result.data.list.vlist,
+                            totalVideos = result.data.page.count,
+                            hasMoreVideos = resolveNextSpaceVideoPage(
+                                order = requestOrder,
+                                currentPage = currentPage,
+                                totalCount = result.data.page.count,
+                                pageSize = pageSize
+                            ) != null,
+                            isLoadingMore = false
+                        )
+                    }
                 } else {
                     _uiState.value = currentState.copy(
                         isLoadingMore = false,
-                        hasMoreVideos = false
+                        hasMoreVideos = false,
+                        locateMessage = locateTarget?.let { "未在该 UP 的投稿中找到最近观看的视频" }
                     )
                 }
             } catch (e: Exception) {
@@ -1961,7 +2059,10 @@ class SpaceViewModel(
                     return@launch
                 }
                 val currentState = _uiState.value as? SpaceUiState.Success ?: return@launch
-                _uiState.value = currentState.copy(isLoadingMore = false)
+                _uiState.value = currentState.copy(
+                    isLoadingMore = false,
+                    locateMessage = locateTarget?.let { "未在该 UP 的投稿中找到最近观看的视频" }
+                )
             }
         }
     }

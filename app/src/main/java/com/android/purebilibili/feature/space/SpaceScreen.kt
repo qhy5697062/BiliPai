@@ -149,7 +149,7 @@ import kotlinx.coroutines.launch
 fun SpaceScreen(
     mid: Long,
     onBack: () -> Unit,
-    onVideoClick: (String, Long) -> Unit,
+    onVideoClick: (String, Long, Long) -> Unit,
     onAudioClick: (Long) -> Unit = {},
     onBangumiClick: (Long) -> Unit = {},
     onWebClick: (String, String) -> Unit = { _, _ -> },
@@ -198,6 +198,13 @@ fun SpaceScreen(
     }
 
     val currentSuccessState = uiState as? SpaceUiState.Success
+    val locateMessage = currentSuccessState?.locateMessage
+    LaunchedEffect(locateMessage) {
+        locateMessage?.let { message ->
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.consumeLocateMessage(message)
+        }
+    }
     val currentSearchScope = currentSuccessState?.let { success ->
         resolveSpaceSearchScope(
             selectedMainTab = success.tabShellState.selectedTab,
@@ -408,6 +415,8 @@ fun SpaceScreen(
                             onLoadMoreArticles = { viewModel.loadSpaceArticles(refresh = false) },
                             onSearchQueryChange = viewModel::updateSearchQuery,
                             onSearchEntryClick = { viewModel.setSearchMode(true) },
+                            onLocateLastWatchedVideo = viewModel::locateLastWatchedVideo,
+                            onLocateTargetConsumed = viewModel::consumePendingLocateBvid,
                             onFollowClick = viewModel::toggleFollow,
                             onTopPhotoClick = { showTopPhotoPreview = true },
                             onAvatarClick = { showAvatarPreview = true },
@@ -628,7 +637,7 @@ fun SpaceScreen(
 private fun SpaceContent(
     state: SpaceUiState.Success,
     gridState: LazyGridState,
-    onVideoClick: (String, Long) -> Unit,
+    onVideoClick: (String, Long, Long) -> Unit,
     videoProgressLookup: (String) -> Long,
     onAudioClick: (Long) -> Unit,
     onBangumiClick: (Long) -> Unit,
@@ -654,6 +663,8 @@ private fun SpaceContent(
     onLoadMoreArticles: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onSearchEntryClick: () -> Unit,
+    onLocateLastWatchedVideo: () -> Unit,
+    onLocateTargetConsumed: (String) -> Unit,
     onFollowClick: () -> Unit,
     onTopPhotoClick: () -> Unit,
     onAvatarClick: () -> Unit,
@@ -736,17 +747,20 @@ private fun SpaceContent(
         }
     }
     val playVideoFromSpace: (String) -> Unit = play@{ bvid ->
-        val resumePositionMs = resolveSpaceResumePositionMs(videoProgressLookup(bvid))
-        val playlist = buildExternalPlaylistFromSpaceVideos(
-            videos = state.videos,
-            clickedBvid = bvid
-        ) ?: return@play onVideoClick(bvid, resumePositionMs)
+        val playbackTarget = resolveSpacePlaybackTarget(
+            syncedProgress = state.watchProgressByBvid[bvid],
+            localPositionMs = videoProgressLookup(bvid)
+        )
+        val playlist = state.videos
+            .takeIf { videos -> videos.any { it.bvid == bvid } }
+            ?.let { videos -> buildExternalPlaylistFromSpaceVideos(videos, clickedBvid = bvid) }
+            ?: return@play onVideoClick(bvid, playbackTarget.cid, playbackTarget.resumePositionMs)
         com.android.purebilibili.feature.video.player.PlaylistManager.setExternalPlaylist(
             playlist.playlistItems,
             playlist.startIndex,
             source = com.android.purebilibili.feature.video.player.ExternalPlaylistSource.SPACE
         )
-        onVideoClick(bvid, resumePositionMs)
+        onVideoClick(bvid, playbackTarget.cid, playbackTarget.resumePositionMs)
     }
     val playAllSpaceVideos: () -> Unit = playAll@{
         val startBvid = resolveSpacePlayAllStartTarget(state.videos) ?: return@playAll
@@ -759,10 +773,14 @@ private fun SpaceContent(
             playlist.startIndex,
             source = com.android.purebilibili.feature.video.player.ExternalPlaylistSource.SPACE
         )
-        val resumePositionMs = resolveSpaceResumePositionMs(videoProgressLookup(startBvid))
+        val playbackTarget = resolveSpacePlaybackTarget(
+            syncedProgress = state.watchProgressByBvid[startBvid],
+            localPositionMs = videoProgressLookup(startBvid)
+        )
         com.android.purebilibili.feature.video.player.PlaylistManager
             .setPlayMode(com.android.purebilibili.feature.video.player.PlayMode.SEQUENTIAL)
-        onPlayAllAudioClick?.invoke(startBvid, resumePositionMs) ?: onVideoClick(startBvid, resumePositionMs)
+        onPlayAllAudioClick?.invoke(startBvid, playbackTarget.resumePositionMs)
+            ?: onVideoClick(startBvid, playbackTarget.cid, playbackTarget.resumePositionMs)
     }
 
     LaunchedEffect(state.userInfo.mid) {
@@ -792,6 +810,32 @@ private fun SpaceContent(
     LaunchedEffect(shouldLoadMoreVideos) {
         if (shouldLoadMoreVideos) {
             onLoadMoreVideos()
+        }
+    }
+
+    val contributionVideoItemStartIndex = remember(
+        selectedMainTab,
+        displayedContributionTabs,
+        selectedContributionTab,
+        state.lastWatchedVideo,
+        state.isSearchMode,
+        currentSearchScope
+    ) {
+        if (selectedMainTab != SpaceMainTab.CONTRIBUTION) {
+            0
+        } else {
+            2 +
+                (if (displayedContributionTabs.isNotEmpty()) 1 else 0) +
+                (if (selectedContributionTab.subTab == SpaceSubTab.VIDEO && state.lastWatchedVideo != null) 1 else 0) +
+                (if (shouldShowSpaceSearchEntry(currentSearchScope, state.isSearchMode)) 1 else 0) +
+                (if (state.isSearchMode && currentSearchScope == SpaceSearchScope.VIDEO) 1 else 0)
+        }
+    }
+    LaunchedEffect(state.pendingLocateBvid, state.videos, contributionVideoItemStartIndex) {
+        val targetBvid = state.pendingLocateBvid ?: return@LaunchedEffect
+        if (state.videos.any { it.bvid == targetBvid }) {
+            gridState.animateScrollToItem(contributionVideoItemStartIndex)
+            onLocateTargetConsumed(targetBvid)
         }
     }
 
@@ -869,7 +913,11 @@ private fun SpaceContent(
                         val localProgressMs = videoProgressLookup(video.bvid)
                         SpaceHomeVideoCard(
                             video = video,
-                            progressState = resolveSpaceVideoProgressState(video, localProgressMs),
+                            progressState = resolveSpaceVideoProgressState(
+                                video = video,
+                                localPositionMs = localProgressMs,
+                                syncedProgress = state.watchProgressByBvid[video.bvid]
+                            ),
                             onClick = { playVideoFromSpace(video.bvid) },
                             sharedTransitionKey = resolveSpaceArchiveSharedTransitionKey(video.bvid),
                             sharedTransitionScope = lazyGridSharedTransitionScope,
@@ -1219,6 +1267,12 @@ private fun SpaceContent(
                     }
                 }
 
+                if (selectedContributionTab.subTab == SpaceSubTab.VIDEO && state.lastWatchedVideo != null) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        SpaceLocateWatchedVideoChip(onClick = onLocateLastWatchedVideo)
+                    }
+                }
+
                 if (
                     shouldShowSpaceSearchEntry(currentSearchScope, state.isSearchMode) &&
                     selectedContributionTab.subTab in setOf(SpaceSubTab.VIDEO, SpaceSubTab.CHARGING_VIDEO)
@@ -1285,7 +1339,11 @@ private fun SpaceContent(
                                 SpaceContributionVideoLayoutMode.GRID -> {
                                     SpaceHomeVideoCard(
                                         video = video,
-                                        progressState = resolveSpaceVideoProgressState(video, localProgressMs),
+                                        progressState = resolveSpaceVideoProgressState(
+                                            video = video,
+                                            localPositionMs = localProgressMs,
+                                            syncedProgress = state.watchProgressByBvid[video.bvid]
+                                        ),
                                         badgeLabel = resolveSpaceVideoChargeBadgeLabel(video),
                                         onClick = { playVideoFromSpace(video.bvid) },
                                         sharedTransitionKey = resolveSpaceArchiveSharedTransitionKey(video.bvid),
@@ -1301,7 +1359,11 @@ private fun SpaceContent(
                                         publishTime = FormatUtils.formatPublishTime(video.created),
                                         play = video.play.toLong(),
                                         secondaryCount = video.comment.toLong(),
-                                        progressState = resolveSpaceVideoProgressState(video, localProgressMs),
+                                        progressState = resolveSpaceVideoProgressState(
+                                            video = video,
+                                            localPositionMs = localProgressMs,
+                                            syncedProgress = state.watchProgressByBvid[video.bvid]
+                                        ),
                                         badgeLabel = resolveSpaceVideoChargeBadgeLabel(video),
                                         onClick = { playVideoFromSpace(video.bvid) },
                                         sharedTransitionKey = resolveSpaceArchiveSharedTransitionKey(video.bvid),
@@ -1431,12 +1493,7 @@ private fun SpaceContent(
                                 publishTime = FormatUtils.formatPublishTime(archive.pubdate),
                                 play = archive.stat.view,
                                 secondaryCount = archive.stat.danmaku,
-                                onClick = {
-                                    onVideoClick(
-                                        archive.bvid,
-                                        resolveSpaceResumePositionMs(videoProgressLookup(archive.bvid))
-                                    )
-                                },
+                                onClick = { playVideoFromSpace(archive.bvid) },
                                 sharedTransitionKey = resolveSpaceArchiveSharedTransitionKey(archive.bvid),
                                 sharedTransitionScope = lazyGridSharedTransitionScope,
                                 animatedVisibilityScope = lazyGridAnimatedVisibilityScope
@@ -1484,12 +1541,7 @@ private fun SpaceContent(
                                 publishTime = FormatUtils.formatPublishTime(archive.pubdate),
                                 play = archive.stat.view,
                                 secondaryCount = archive.stat.danmaku,
-                                onClick = {
-                                    onVideoClick(
-                                        archive.bvid,
-                                        resolveSpaceResumePositionMs(videoProgressLookup(archive.bvid))
-                                    )
-                                },
+                                onClick = { playVideoFromSpace(archive.bvid) },
                                 sharedTransitionKey = resolveSpaceArchiveSharedTransitionKey(archive.bvid),
                                 sharedTransitionScope = lazyGridSharedTransitionScope,
                                 animatedVisibilityScope = lazyGridAnimatedVisibilityScope
@@ -2118,6 +2170,45 @@ private fun SpaceSearchEntryChip(
             Text(
                 text = label,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
+
+@Composable
+private fun SpaceLocateWatchedVideoChip(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        shape = AppShapes.borderedContainer(ContainerLevel.Field),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.PlayCircleOutline,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+            Text(
+                text = "定位刚看视频",
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
