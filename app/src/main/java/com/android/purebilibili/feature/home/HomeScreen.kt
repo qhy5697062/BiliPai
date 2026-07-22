@@ -88,11 +88,17 @@ import com.android.purebilibili.feature.home.components.resolveHomeTopReservedLi
 import com.android.purebilibili.feature.home.components.resolveHomeTopTabRowHeight
 import com.android.purebilibili.feature.home.policy.BottomBarVisibilityIntent
 import com.android.purebilibili.feature.home.policy.HomeBottomBarScrollState
+import com.android.purebilibili.feature.home.policy.HomeFeedScrollAnchor
+import com.android.purebilibili.feature.home.policy.HomeFeedScrollAnchorSaver
+import com.android.purebilibili.feature.home.policy.captureHomeFeedScrollAnchor
 import com.android.purebilibili.feature.home.policy.reduceHomePreScroll
 import com.android.purebilibili.feature.home.policy.resolveHomeHeaderTransitionRunning
 import com.android.purebilibili.feature.home.policy.resolveHomeHeaderSettleTransition
 import com.android.purebilibili.feature.home.policy.resolveHomeHeaderReleaseTarget
+import com.android.purebilibili.feature.home.policy.shouldApplyHomeFeedScrollAnchor
 import com.android.purebilibili.feature.home.policy.shouldHandleHomeVerticalPreScroll
+import com.android.purebilibili.feature.home.policy.shouldReserveHomeBottomBarListPadding
+import com.android.purebilibili.feature.home.policy.shouldRestoreHomeFeedScrollAnchor
 import com.android.purebilibili.feature.home.policy.reduceHomeBottomBarListScroll
 import com.android.purebilibili.feature.home.policy.resolveHomeBottomBarBaseVisibility
 import com.android.purebilibili.feature.home.policy.resolveHomeHeaderOffsetForSettledPage
@@ -276,9 +282,14 @@ fun HomeScreen(
     val coroutineScope = rememberCoroutineScope() // 用于双击回顶动画
     val globalScrollOffset = LocalHomeScrollOffset.current
     val globalFeedScrollInProgress = LocalHomeFeedScrollInProgress.current
-    // [Header] 首页重选/双击回顶时需要强制恢复顶部，避免自动收缩后残留空白区域
-    var headerOffsetHeightPx by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+    // [Header] 首页重选/双击回顶时需要强制恢复顶部，避免自动收缩后残留空白区域。
+    // saveable：进 UP 空间等二级页后返回时保留折叠态，避免顶栏重张开带动列表“自动下滑”感。
+    var headerOffsetHeightPx by rememberSaveable { mutableFloatStateOf(0f) }
     var headerSettleAnimationJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    // 离开首页顶层时冻结滚动锚点；返回后校正 LazyGrid 因 contentPadding/重组造成的偏移漂移。
+    var pendingFeedScrollAnchor by rememberSaveable(stateSaver = HomeFeedScrollAnchorSaver) {
+        mutableStateOf<HomeFeedScrollAnchor?>(null)
+    }
     var delayTopTabsUntilCardSettled by remember { mutableStateOf(false) }
     var hideTopTabsForForwardDetailNav by remember { mutableStateOf(false) }
     var returnAnimationStartElapsedMs by remember { mutableLongStateOf(0L) }
@@ -439,12 +450,66 @@ fun HomeScreen(
             }
     }
 
-    // 详情页覆盖首页期间 Pager 可能受导航过渡影响；返回后必须先由业务状态重新对齐。
+    // 详情/空间等覆盖首页期间 Pager 可能受导航过渡影响；返回后必须先由业务状态重新对齐。
+    // 同时冻结 feed 滚动锚点：二级页返回后 contentPadding（底栏）与列表重测可能把视口“顶”下去一段。
     LaunchedEffect(isTopLevelActive) {
         if (!isTopLevelActive) {
+            val gridState = if (currentCategory == HomeCategory.POPULAR) {
+                popularGridStates[popularSubCategory]
+            } else {
+                gridStates[currentCategory]
+            }
+            if (gridState != null) {
+                pendingFeedScrollAnchor = captureHomeFeedScrollAnchor(
+                    category = currentCategory,
+                    popularSubCategory = popularSubCategory,
+                    firstVisibleItemIndex = gridState.firstVisibleItemIndex,
+                    firstVisibleItemScrollOffset = gridState.firstVisibleItemScrollOffset,
+                    headerOffsetPx = headerOffsetHeightPx
+                )
+            }
             hasSyncedPagerWithState = false
             lastDrivenPagerCategory = null
         }
+    }
+
+    LaunchedEffect(isTopLevelActive, hasSyncedPagerWithState, pendingFeedScrollAnchor) {
+        val anchor = pendingFeedScrollAnchor
+        if (
+            !shouldRestoreHomeFeedScrollAnchor(
+                isTopLevelActive = isTopLevelActive,
+                hasSyncedPagerWithState = hasSyncedPagerWithState,
+                anchor = anchor
+            )
+        ) {
+            return@LaunchedEffect
+        }
+        val restoreAnchor = requireNotNull(anchor)
+        // 等 Pager snap / 底栏 padding 落定后再校正，避免用过渡中的中间布局写回错误 offset。
+        yield()
+        val gridState = if (restoreAnchor.category == HomeCategory.POPULAR) {
+            popularGridStates[restoreAnchor.popularSubCategory]
+        } else {
+            gridStates[restoreAnchor.category]
+        } ?: run {
+            pendingFeedScrollAnchor = null
+            return@LaunchedEffect
+        }
+        if (
+            shouldApplyHomeFeedScrollAnchor(
+                currentIndex = gridState.firstVisibleItemIndex,
+                currentOffset = gridState.firstVisibleItemScrollOffset,
+                currentHeaderOffsetPx = headerOffsetHeightPx,
+                anchor = restoreAnchor
+            )
+        ) {
+            gridState.scrollToItem(
+                restoreAnchor.firstVisibleItemIndex,
+                restoreAnchor.firstVisibleItemScrollOffset
+            )
+            setHeaderOffsetImmediate(restoreAnchor.headerOffsetPx)
+        }
+        pendingFeedScrollAnchor = null
     }
 
     // [P2] 当前分类被隐藏时，自动落到首个可见分类
@@ -1036,9 +1101,15 @@ fun HomeScreen(
     } else {
         0.dp
     }
+    // 滚动隐藏/从二级页返回时底栏可见性会抖动；列表 bottom padding 始终按“应保留底栏占位”
+    // 计算，避免 contentPadding 变化把 LazyGrid 视口顶下去一段。
+    val reserveHomeBottomBarPadding = shouldReserveHomeBottomBarListPadding(
+        useSideNavigation = useSideNavigation,
+        bottomBarVisibilityMode = bottomBarVisibilityMode
+    )
     val homeListBottomPadding = when {
         useSideNavigation -> navBarHeight + 8.dp
-        !bottomBarVisible -> navBarHeight + 8.dp
+        !reserveHomeBottomBarPadding -> navBarHeight + 8.dp
         isBottomBarFloating -> bottomBarBodyHeight + bottomBarVerticalInset + navBarHeight + 12.dp
         else -> dockedBarBodyHeight + navBarHeight + 12.dp
     }
